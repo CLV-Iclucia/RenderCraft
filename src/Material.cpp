@@ -1,5 +1,5 @@
 ﻿#include "Material.h"
-#include "../XMath/MyMath.h"
+#include "../XMath/ext/Graphics/MathUtils.h"
 #include "Matrix.h"
 #include <cmath>
 /*Both wo and wi leaves the point*/

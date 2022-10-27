@@ -1,6 +1,6 @@
 #ifndef RENDERCRAFT_LIGHTS_H
 #define RENDERCRAFT_LIGHTS_H
-#include "Vector.h"
+#include "../XMath/ext/Graphics/MathUtils.h"
 class Lights
 {
     protected:

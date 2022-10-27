@@ -4,7 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include <initializer_list> 
-#include "Vector.h"
+#include "../XMath/ext/Graphics/MathUtils.h"
 #include <cstring>
 template<typename T>class Mat3x3;
 template<typename T>

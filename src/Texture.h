@@ -1,6 +1,6 @@
 #ifndef RENDERCRAFT_TEXTURE_H
 #define RENDERCRAFT_TEXTURE_H
-#include "global.h"
+#include "../XMath/ext/Graphics/MathUtils.h"
 template<typename T>
 struct Texture
 {

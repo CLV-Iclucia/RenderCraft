@@ -1,6 +1,6 @@
 #ifndef RENDERCRAFT_MICROFACET_H
 #define RENDERCRAFT_MICROFACET_H
-#include "Vector.h"
+#include "../XMath/ext/Graphics/MathUtils.h"
 struct Microfacet
 {
 	public:
@@ -17,7 +17,7 @@ struct Microfacet
 class TrowbridgeModel : public Microfacet
 {
 	public:
-		TrowbridgeModel(Real _alpha) : alpha(_alpha) {}
+		explicit TrowbridgeModel(Real _alpha) : alpha(_alpha) {}
 		Real NormalDistribution(Real) const override;
 		Real SmithMonoShadow(Real) const override;
 		Real ShadowMasking(Real, Real) const override;

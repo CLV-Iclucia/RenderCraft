@@ -2,7 +2,7 @@
 #define RENDERCRAFT_SCENE_HPP
 #include <vector>
 #include "Object.h"
-#include "../XMath/MyMath.h"
+#include "../XMath/ext/Vector.h"
 #include "Intersection.h"
 #include "Ray.hpp"
 #include <algorithm>
@@ -53,12 +53,12 @@ struct Scene
 				Real lerp_ratio = 0.5 * wo[1] + 0.5;
 				return lerp(BackgroundColor, { 1.0f, 1.0f, 1.0f }, lerp_ratio);
 			}
-			else return Vec3();
+			else return {};
 		}
 		Material* mat = inter.mat;
 		const Vec3& N = inter.normal;
 		wo = -wo;
-		if (checkInside(wo, N) && !mat->translucent) return Vec3();
+		if (checkInside(wo, N) && !mat->translucent) return {};
 		const Vec3& P = inter.P;
 		Vec3 ret;
 		Real pdf_inv;

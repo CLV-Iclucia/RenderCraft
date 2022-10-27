@@ -1,5 +1,5 @@
 #include "Sphere.h"
-#include "../XMath/MyMath.h"
+#include "../XMath/ext/Graphics/MathUtils.h"
 #include <cmath>
 Intersection Sphere::intersect(const Ray& ray) const
 {

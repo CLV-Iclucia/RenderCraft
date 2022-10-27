@@ -1,7 +1,7 @@
 #pragma once
-#include "Vector.h"
+#include "../XMath/ext/Graphics/MathUtils.h"
 #include "Microfacet.h"
-#include "../XMath/MyMath.h"
+#include "../XMath/ext/Graphics/MathUtils.h"
 struct Material
 {
     bool translucent;

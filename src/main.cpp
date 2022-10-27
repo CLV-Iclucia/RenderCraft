@@ -3,11 +3,10 @@
 #include <algorithm>
 #include <cmath>
 #include "Ray.hpp"
-#include "Vector.h"
 #include "Sphere.h"
 #include "Scene.hpp"
 #include "Materials.h"
-const int spp = 16;
+const int spp = 4;
 const int nx = 1024, ny = 1024;
 Scene scene;
 int main()

@@ -1,6 +1,6 @@
 #ifndef RENDERCRAFT_INTERSECTION_H
 #define RENDERCRAFT_INTERSECTION_H
-#include "Vector.h"
+#include "../XMath/ext/Graphics/MathUtils.h"
 #include "Material.h"
 struct Intersection
 {

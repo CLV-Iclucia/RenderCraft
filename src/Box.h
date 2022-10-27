@@ -1,4 +1,5 @@
-#pragma once
+#ifndef RENDERCRAFT_BOX_H
+#define RENDERCRAFT_BOX_H
 #include "Object.h"
 #include "Intersection.h"
 #include "Ray.hpp"
@@ -9,3 +10,4 @@ class Box : Object
 	private:
 		Vec3 pMin, pMax;
 };
+#endif

@@ -1,5 +1,6 @@
-#pragma once
-#include "Vector.h"
+#ifndef RENDERCRAFT_TRIANGLE_H
+#define RENDERCRAFT_TRIANGLE_H
+#include "../XMath/ext/Graphics/MathUtils.h"
 #include "Object.h"
 #include "Material.h"
 class Triangle : public Object
@@ -14,3 +15,4 @@ class Triangle : public Object
     }
     
 };
+#endif

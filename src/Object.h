@@ -2,7 +2,7 @@
 #define RENDERCRAFT_OBJECT_H
 #include "Intersection.h"
 #include "Ray.hpp"
-#include "Vector.h"
+#include "../XMath/ext/Graphics/MathUtils.h"
 class Object
 {
 	public:
