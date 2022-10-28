@@ -1,12 +1,8 @@
 //
 // Created by creeper on 22-10-26.
 //
-#include "./Lights.h"
+#include "./Light.h"
 #include "../XMath/ext/Graphics/MathUtils.h"
-Spectrum Sky::evalEmission(const Vec3& world_dir) const
-{
-    return lerp(ColorA, ColorB, std::fabs(world_dir[1]));
-}
 
 Spectrum DiskLight::evalEmission(const Vec3 &) const
 {

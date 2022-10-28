@@ -1,10 +1,11 @@
 #include <iostream>
+#include <fstream>
 #include <cstdio>
 #include <algorithm>
 #include <cmath>
 #include "Ray.hpp"
 #include "Sphere.h"
-#include "Scene.hpp"
+#include "Scene.h"
 #include "Materials.h"
 const int spp = 4;
 const int nx = 1024, ny = 1024;
@@ -12,12 +13,13 @@ Scene scene;
 int main()
 {
     int ScrWid = 4, ScrHeight = 4, ScrZ = -1;
-    freopen("output.ppm", "w", stdout);
-    std::cout << "P3" << std::endl << nx << " " << ny << std::endl << 255 <<std::endl;
-    scene.ObjList.push_back(new Sphere({0.0, 0.0, -1.0}, 0.5, Gold));
-    scene.ObjList.push_back(new Sphere({0.0, -100.5, -1.0}, 100.0, Gold));
-    scene.ObjList.push_back(new Sphere({1.0, 0.0, -1.0}, 0.5, Silver));
-    scene.ObjList.push_back(new Sphere({-0.5, 0.0, -2.0}, 0.5, Copper));
+    std::fstream fout("./output.ppm", std::ios_base::out);
+    fout << "P3" << std::endl << nx << " " << ny << std::endl << 255 <<std::endl;
+    scene.load(new Sphere({0.0, 0.0, -1.0}, 0.5, Gold));
+    scene.load(new Sphere({0.0, -100.5, -1.0}, 100.0, Gold));
+    scene.load(new Sphere({1.0, 0.0, -1.0}, 0.5, Silver));
+    scene.load(new Sphere({-0.5, 0.0, -2.0}, 0.5, Copper));
+    scene.envMap = std::dynamic_pointer_cast<EnvMap>(std::make_shared<Sky>(0.4, 0.0, 0.0, 0.8, 0.0, 0.0));
     for(int j = ny-1; j >= 0; j--)
     {
         for(int i = 0; i < nx; i++)
@@ -39,9 +41,11 @@ int main()
             color[0] = std::sqrt(color[0]);
             color[1] = std::sqrt(color[1]);
             color[2] = std::sqrt(color[2]);
-            printf("%d %d %d\n", int(color[0] * 255.99), int(color[1] * 255.99), int(color[2] * 255.99));
+            fout << int(color[0] * 255.99) << " " << int(color[1] * 255.99) << " " << int(color[2] * 255.99) << std::endl;
         }
-        std::cerr << static_cast<Real>(ny - j) * 100.0 / ny << "% rendered" << std::endl;
+        fflush(stdout);
+        printf("%.2lf %% rendered\n", static_cast<Real>(ny - j) * 100.0 / ny);
     }
-    std::cerr << "Finish Rendering." << std::endl;
+    fflush(stdout);
+    printf("Finish rendering\n");
 }

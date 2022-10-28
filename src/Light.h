@@ -1,7 +1,9 @@
-#ifndef RENDERCRAFT_LIGHTS_H
-#define RENDERCRAFT_LIGHTS_H
+#ifndef RENDERCRAFT_LIGHT_H
+#define RENDERCRAFT_LIGHT_H
 #include "../XMath/ext/Graphics/MathUtils.h"
-class Lights
+#include "Object.h"
+
+class Light : Object
 {
     protected:
         Spectrum radiance;
@@ -11,20 +13,11 @@ class Lights
         virtual Vec3 sample(const Vec3&) const = 0;
 };
 
-///<! Once Sky light is used, it will automatically return the radiance if the ray do not intersect with any objects.
-class Sky
-{
-    private:
-        Spectrum ColorA, ColorB;// in our setting, the color of the sky will lerp between the two colors.
-    public:
-        Spectrum evalEmission(const Vec3&) const;
-};
-
 /**
  * @brief DiskLight is a surface light in the shape of a round disk
  * pos is the coordinate of the center of the disk, and the disk faces normal.
  */
-class DiskLight : Lights
+class DiskLight : Light
 {
     private:
         Real radius = 0.0;
@@ -36,10 +29,9 @@ class DiskLight : Lights
 };
 
 /**
- * @brief SphereLight is a sphere emitting light
- * pos is the coordinate of the center of the sphere.
+ * @brief SphereLight is a sphere emitting light \n
  */
-class SphereLight : Lights
+class SphereLight : Light
 {
     private:
         Real radius = 0.0;

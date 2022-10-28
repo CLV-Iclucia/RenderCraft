@@ -2,6 +2,7 @@
 #define RENDERCRAFT_INTERSECTION_H
 #include "../XMath/ext/Graphics/MathUtils.h"
 #include "Material.h"
+#include "Texture.h"
 struct Intersection
 {
 	bool hasIntersection = false;
