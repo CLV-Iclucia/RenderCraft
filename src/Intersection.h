@@ -10,7 +10,7 @@ struct Intersection
 	Real dis = 0.0;
 	Material* mat = nullptr;
 	Intersection() = default;
-	Intersection(bool _hasIntersection, const Vec3& _P, const Vec3& _normal, Real _dis, Material* _mat) :
-		hasIntersection(_hasIntersection), P(_P), normal(_normal), dis(_dis), mat(_mat) {}
+	Intersection(bool _hasIntersection, Vec3 P_, Vec3 _normal, Real _dis, Material* _mat) :
+		hasIntersection(_hasIntersection), P(std::move(P_)), normal(std::move(_normal)), dis(_dis), mat(_mat) {}
 };
 #endif

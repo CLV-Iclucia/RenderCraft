@@ -34,12 +34,8 @@ Vec3 Scene::cast_ray(const Ray& ray, int depth)
     Vec3 wo = ray.dir;
     if (!inter.hasIntersection)
     {
-        if (!depth)
-        {
-            Real lerp_ratio = 0.5 * wo[1] + 0.5;
-            return lerp(BackgroundColor, { 1.0f, 1.0f, 1.0f }, lerp_ratio);
-        }
-        else return {};
+        if(depth) return {};
+        else return envMap->evalEmission(wo);
     }
     Material* mat = inter.mat;
     const Vec3& N = inter.normal;
@@ -53,8 +49,7 @@ Vec3 Scene::cast_ray(const Ray& ray, int depth)
     Intersection dir_inter = intersect(Ray(perturb_P, wi));
     if (!dir_inter.hasIntersection)//calc the direct radiance from the environment/sky
     {
-        Real lerp_ratio = 0.5 * wi[1] + 0.5;
-        const Vec3 dir_rad = lerp(BackgroundColor, { 1.0f, 1.0f, 1.0f }, lerp_ratio);
+        const Vec3 dir_rad = envMap->evalEmission(wi);
         const Real cosThetaI = std::abs(N.dot(wi));
         ret += pdf_inv * mat->BxDF(wi, wo, N) * cosThetaI * dir_rad;//Using Monte Carlo Integration
     }

@@ -15,7 +15,7 @@ struct EnvMap
     virtual Spectrum evalEmission(const Vec3&) const = 0;
 };
 
-class Sky : EnvMap
+class Sky : public EnvMap
 {
     private:
         Spectrum ColorA, ColorB;// in our setting, the color of the sky will lerp between the two colors.

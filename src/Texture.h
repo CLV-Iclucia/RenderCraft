@@ -17,7 +17,7 @@ class Texture
  * By default, PerlinNoise describes a 2D-texture
  */
 template<typename T>
-class PerlinNoise : Texture<T>
+class PerlinNoise : public Texture<T>
 {
     private:
         uint m = 0, n = 0;
@@ -41,7 +41,7 @@ class PerlinNoise : Texture<T>
 };
 
 template<typename T>
-class CheckBoard : Texture<T>
+class CheckBoard : public Texture<T>
 {
     private:
         T A, B;
@@ -57,7 +57,7 @@ class CheckBoard : Texture<T>
 };
 
 template<typename T>
-class ImageTexture : Texture<T>
+class ImageTexture : public Texture<T>
 {
     private:
 
