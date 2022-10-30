@@ -1,6 +1,6 @@
 ﻿#include "Material.h"
 #include "../XMath/ext/Graphics/MathUtils.h"
-#include "Matrix.h"
+#include "../XMath/ext/Matrix.h"
 #include <cmath>
 /*Both wo and wi leaves the point*/
 Vec3 Metal::Fresnel(Real cosTheta) const
@@ -41,15 +41,7 @@ Vec3 Metal::BxDF(const Vec3& wi, const Vec3& wo, const Vec3& N) const
 Vec3 Metal::sample(const Vec3& normal, const Vec3& wo, Real& pdf_inv) const
 {
     Vec3 IS = surface->ImportanceSample(pdf_inv);
-    Vec3 T({ 1.0, 0.0, 0.0 });
-    if (normal[0] >= 0.99 || normal[0] <= -0.99)
-    {
-        T[0] = 0.0;
-        T[1] = 1.0;
-    }
-    const Vec3 B = cross(normal, T).normalize();
-    T = cross(normal, B);
-    const Mat3f TBN(T, B, normal);
+    Mat3 TBN = construct_frame(normal);
     Vec3 H = TBN * IS;
     Real cosTheta = H.dot(wo);
     Vec3 ret = H * 2.0 * cosTheta - wo;
@@ -80,16 +72,8 @@ Vec3 Lambertian::eval(const Vec3&, const Vec3&, const Vec3&) const
 Vec3 Lambertian::sample(const Vec3& normal, const Vec3&, Real& pdf_inv) const
 {
     Vec3 ret = cos_weighted_sample_hemisphere();
+    Mat3 TBN = construct_frame(normal);
     pdf_inv = PI / std::max(ret[2], EPS);
-    Vec3 T({ 1.0, 0.0, 0.0 });
-    if (normal[0] >= 0.99 || normal[0] <= -0.99)
-    {
-        T[0] = 0.0;
-        T[1] = 1.0;
-    }
-    const Vec3 B = cross(normal, T).normalize();
-    T = cross(normal, B);
-    const Mat3f TBN(T, B, normal);
     return TBN * ret;
 }
 Vec3 Lambertian::BxDF(const Vec3& wi, const Vec3& wo, const Vec3& N) const
@@ -103,16 +87,8 @@ Vec3 Translucent::sample(const Vec3& N, const Vec3& wo, Real& pdf_inv) const
     bool inside = checkInside(wo, N);
     if (inside) normal = N * (-1.0);
     else normal = N;
+    Mat3 TBN = construct_frame(normal);
     const Real eta = inside ? etaB / etaA : etaA / etaB; //eta = etaI / etaO
-    Vec3 T({ 1.0, 0.0, 0.0 });
-    if (normal[0] >= 0.99 || normal[0] <= -0.99)
-    {
-        T[0] = 0.0;
-        T[1] = 1.0;
-    }
-    const Vec3 B = cross(normal, T).normalize();
-    T = cross(normal, B);
-    const Mat3f TBN(T, B, normal);
     Vec3 H, IS;
     const Real etaSqr = eta * eta;
     Real cosThetaO = normal.dot(wo);
