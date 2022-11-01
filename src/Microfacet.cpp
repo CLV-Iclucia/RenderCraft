@@ -32,8 +32,8 @@ Real TrowbridgeModel::ShadowMasking(Real cosThetaI, Real cosThetaO) const
     Real cosThetaSqrO = cosThetaO * cosThetaO;
     return SmithMonoShadow(cosThetaSqrI) * SmithMonoShadow(cosThetaSqrO);
 }
-
-Vec3 TrowbridgeModel::ImportanceSample(Real& pdf_inv) const //sample a half-vector on the hemisphere
+///sample a half-vector on the hemisphere
+Vec3 TrowbridgeModel::ImportanceSample(Real& pdf_inv) const
 {
     const Real Phi = get_random() * PI2;
     Real tmp = get_random();
@@ -46,4 +46,9 @@ Vec3 TrowbridgeModel::ImportanceSample(Real& pdf_inv) const //sample a half-vect
     pdf_inv = tmp / cosTheta * PI / alphaSqr;
     Vec3 H({ sinTheta * std::cos(Phi), sinTheta * std::sin(Phi), cosTheta });
     return H;
+}
+
+Vec3 TrowbridgeModel::SampleVNDF(Real& pdf_inv) const
+{
+
 }

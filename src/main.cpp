@@ -7,8 +7,8 @@
 #include "Sphere.h"
 #include "Scene.h"
 #include "Materials.h"
-const int spp = 128;
-const int nx = 512, ny = 512;
+const int spp = 256;
+const int nx = 1024, ny = 1024;
 Scene scene;
 int main()
 {
@@ -20,7 +20,8 @@ int main()
     scene.load(new Sphere({1.0, 0.0, -1.0}, 0.5, Silver));
     scene.load(new Sphere({-0.5, 0.0, -2.0}, 0.5, Copper));
     scene.load(new Sphere({-1.5, 0.2, -1.3}, 0.2, Silver));
-    scene.envMap = std::static_pointer_cast<EnvMap>(std::make_shared<Sky>(1.0, 0.0, 0.0, 1.0, 0.6, 0.6));
+    scene.load(new Sphere({-2.0, 0.6, 1.0}, 0.1, Gold));
+    scene.envMap = std::static_pointer_cast<EnvMap>(std::make_shared<Sky>(0.6, 0.0, 0.0, 0.6, 0.3, 0.3));
     for(int j = ny-1; j >= 0; j--)
     {
         for(int i = 0; i < nx; i++)

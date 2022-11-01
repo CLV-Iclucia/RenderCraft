@@ -24,5 +24,6 @@ class TrowbridgeModel : public Microfacet
 		Vec3 ImportanceSample(Real&) const override;
 	private:
 		Real alpha = 1.0;
+        Vec3 SampleVNDF(Real &pdf_inv) const;
 };
 #endif

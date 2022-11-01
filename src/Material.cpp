@@ -32,9 +32,9 @@ Vec3 Metal::BxDF(const Vec3& wi, const Vec3& wo, const Vec3& N) const
 {
     Real cosThetaI = wi.dot(N) + EPS;
     Real cosThetaO = wo.dot(N) + EPS;
-    const Vec3 H = (wi + wo).normalize();
-    const Real cosThetaH = std::max(N.dot(H), 0.0);
-    Vec3 ret = 0.25 * Fresnel(cosThetaO) * surface->NormalDistribution(cosThetaH)
+    Vec3 H = (wi + wo).normalize();
+    Real cosThetaH = std::max(N.dot(H), 0.0);
+    Vec3 ret = 0.25 * Fresnel(std::min(H.dot(wo), 1.0)) * surface->NormalDistribution(cosThetaH)
         / cosThetaO * surface->ShadowMasking(cosThetaI, cosThetaO) / cosThetaI;
     return ret;
 }
@@ -160,7 +160,7 @@ Vec3 Translucent::eval(const Vec3& wi, const Vec3& wo, const Vec3& N) const
 {
     return Vec3(0.0);
 }
-Real Translucent::Fresnel(Real cosThetaO, Real eta) const
+Real Translucent::Fresnel(Real cosThetaO, Real eta)
 {
     const Real sinThetaO = std::sqrt(1.0 - cosThetaO * cosThetaO);
     const Real sinThetaI = sinThetaO / eta;
@@ -177,14 +177,15 @@ Vec3 Translucent::BxDF(const Vec3& wi, const Vec3& wo, const Vec3& N) const
     bool inside = checkInside(wo, N);
     if (inside) normal = N * (-1.0);
     else normal = N;
-    const Real eta = inside ? etaB / etaA : etaA / etaB; //eta = etaI / etaO
-    const Real cosThetaO = std::min(normal.dot(wo), 1.0);
+    Real eta = inside ? etaB / etaA : etaA / etaB; //eta = etaI / etaO
+    Real cosThetaO = std::min(normal.dot(wo), 1.0);
     Real cosThetaI = normal.dot(wi);
-    const Real Fr = 1.0 - cosThetaO * cosThetaO < eta * eta ? Fresnel(cosThetaO, eta) : 1.0;
     if (cosThetaI >= 0.0) //a reflection light
     {
-        const Vec3 H = (wi + wo).normalize();
-        const Real cosThetaH = std::max(normal.dot(H), 0.0);
+        Vec3 H = (wi + wo).normalize();
+        Real HdotO = std::min(H.dot(wo), 1.0);
+        Real Fr = 1.0 - HdotO * HdotO < eta * eta ? Fresnel(HdotO, eta) : 1.0;
+        Real cosThetaH = std::max(normal.dot(H), 0.0);
         Vec3 ret = 0.25 * Fr * color * surface->NormalDistribution(cosThetaH)
             / cosThetaO * surface->ShadowMasking(cosThetaI, cosThetaO) / cosThetaI;
         return ret;
@@ -193,6 +194,8 @@ Vec3 Translucent::BxDF(const Vec3& wi, const Vec3& wo, const Vec3& N) const
     {
         cosThetaI = -cosThetaI;
         const Vec3 H = (wi * eta + wo).normalize();
+        Real HdotO = std::min(H.dot(wo), 1.0);
+        Real Fr = 1.0 - HdotO * HdotO < eta * eta ? Fresnel(HdotO, eta) : 1.0;
         const Real cosThetaH = std::abs(normal.dot(H));
         Real HdotWi = H.dot(wi);
         Real HdotWo = std::abs(H.dot(wo));

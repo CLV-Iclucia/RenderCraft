@@ -72,7 +72,7 @@ Intersection BVH::intersect(const Node* o, const Ray& ray)
         {
             Intersection interL = intersect(o->lch, ray);
             Intersection interR = intersect(o->rch, ray);
-            if (!interL.hasIntersection && !interR.hasIntersection) return Intersection();
+            if (!interL.hasIntersection && !interR.hasIntersection) return {};
             else if (interL.hasIntersection && !interR.hasIntersection) return interL;
             else if (!interL.hasIntersection && interR.hasIntersection) return interR;
             else return interL.dis < interR.dis ? interL : interR;

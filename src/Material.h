@@ -51,7 +51,7 @@ class Translucent : public Material //translucent dielectrics
         Vec3 eval(const Vec3&, const Vec3&, const Vec3&) const override;
         Vec3 BxDF(const Vec3&, const Vec3&, const Vec3&) const override;
     private:
-        Real Fresnel(Real, Real) const;
+        static Real Fresnel(Real, Real) ;
         Microfacet* surface;//surface = nullptr means that the surface is smooth
         Vec3 color;
         Real etaA, etaB = 1.0;//etaA: eta of the media inside; etaB: eta of the media outside

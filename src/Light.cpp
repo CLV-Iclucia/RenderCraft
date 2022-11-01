@@ -29,7 +29,7 @@ Spectrum SphereLight::evalEmission(const Vec3 &world_dir, const Vec3& p) const
 
 Real SphereLight::pdf_inv(const Vec3& ref, const Vec3 &p) const
 {
-    return P;
+    return PI4;
 }
 
 Vec3 SphereLight::sample(const Vec3 &) const
