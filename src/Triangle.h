@@ -3,16 +3,13 @@
 #include "../XMath/ext/Graphics/MathUtils.h"
 #include "Object.h"
 #include "Material.h"
+#include "Mesh.h"
+
 class Triangle : public Object
 {
     Vec3 v[3];
-    Material* m;
-    Triangle()
-    {
-        for(int i = 0; i < 3; i++)
-            v[i] = Vec3();
-        m = nullptr;
-    }
-    
+    Vec2 uv[3];
+    Mesh* mesh = nullptr;
+    Triangle() = default;
 };
 #endif
