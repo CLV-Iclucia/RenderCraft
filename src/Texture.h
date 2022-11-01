@@ -1,6 +1,7 @@
 #ifndef RENDERCRAFT_TEXTURE_H
 #define RENDERCRAFT_TEXTURE_H
 #include "../XMath/ext/Graphics/MathUtils.h"
+#include "Material.h"
 #include <memory>
 /**
  * @tparam T the type of the texture value
@@ -14,7 +15,7 @@ class Texture
 };
 
 template<typename T>
-class UniformTexture : public Texture<T>
+class ConstantTexture : public Texture<T>
 {
     public:
         T eval(Real u, Real v) const override { return tex; }
@@ -31,6 +32,7 @@ class PerlinNoise : public Texture<T>
     private:
         uint m = 0, n = 0;
         T *a = nullptr;
+        std::shared_ptr<Texture<T>> texA, texB;
     public:
         PerlinNoise(uint _width, uint _height) : m(_width), n(_height)
         {
@@ -50,14 +52,14 @@ class PerlinNoise : public Texture<T>
 };
 
 template<typename T>
-class CheckBoard : public Texture<T>
+class CheckerBoard : public Texture<T>
 {
     private:
         T A, B;
         Real grid_w = 0.0, grid_h = 0.0;
         std::shared_ptr<Texture<T> > texA, texB;
     public:
-        CheckBoard(const Texture<T>& A_, const Texture<T>& B_) : A(A_), B(B_) {}
+        CheckerBoard(const Texture<T>& A_, const Texture<T>& B_) : A(A_), B(B_) {}
         T eval(Real u, Real v) const override
         {
             int _u = floor(u / grid_w);
@@ -75,6 +77,18 @@ class ImageTexture : public Texture<T>
 
     public:
 
+};
+
+/**
+ * \brief it is just a structure to store all the textures used on a material.
+ */
+struct TextureGroup
+{
+    ///< mat_tex can cover various aspects like pure color, roughness and normal distribution
+    std::shared_ptr<Texture<Material*>> mat_tex;
+    std::shared_ptr<Texture<Real>> bump_map;
+    ///< However, mat_tex cannot handle various image maps, so it is helpful to use an optional image texture
+    std::shared_ptr<Texture<Spectrum>> image_tex;
 };
 #endif
 
