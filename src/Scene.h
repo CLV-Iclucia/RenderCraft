@@ -24,6 +24,6 @@ struct Scene
 	Intersection intersect(const Ray& ray);
 	void init();
 	//Regulation: the direction of the ray must be flipped before checking and sampling
-	Vec3 cast_ray(const Ray& ray, int depth);
+	Spectrum cast_ray(Ray& ray);
 };
 #endif
