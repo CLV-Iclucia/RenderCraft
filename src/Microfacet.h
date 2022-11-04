@@ -25,6 +25,7 @@ class TrowbridgeModel : public Microfacet
 		Vec3 ImportanceSample(Real&) const override;
 	private:
 		Real alpha = 1.0;
+        std::shared_ptr<Texture<Vec3> > normal_map;
         std::shared_ptr<Texture<Real> > tex;
         Vec3 SampleVNDF(Real &pdf_inv) const;
 };

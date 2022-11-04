@@ -18,17 +18,20 @@ void parse_xml(const std::string &path)
             fin >> ch;
             if(ch == '/')
                 is_close = true;
-
             else
             {
                 str += ch;
                 while(fin >> ch && ch != '>') str += ch;
-
+                if(str[str.length() - 1] != '>')
+                {
+                    std::cerr << "Failed to parse the scene description file: please check the format." << std::endl;
+                    return ;
+                }
             }
         }
         else
         {
-            std::cerr << "the scene description file cannot be parsed" << std::endl;
+            std::cerr << "Failed to parse the scene description file: please check the format." << std::endl;
             return ;
         }
     }

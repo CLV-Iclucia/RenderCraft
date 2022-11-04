@@ -9,6 +9,7 @@ class Triangle : public Object
 {
     Vec3 v[3];
     Vec2 uv[3];
+    ///< the mesh that the triangle belongs to
     Mesh* mesh = nullptr;
     Triangle() = default;
 };
