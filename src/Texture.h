@@ -4,8 +4,14 @@
 #include "Material.h"
 #include <memory>
 /**
- * @tparam T the type of the texture value
- *
+ * \brief All textures in RenderCraft are considered as "distribution".
+ *        They describe the distribution of properties(materials, normals, colors, e.g.)
+ *        And you can even use nested textures to create various effects.
+ *        ConstantTexture is the atomic element, it encapsulates the property.
+ */
+
+/**
+ * @tparam T the type of the texture value.
  */
 template<typename T>
 class Texture
@@ -86,8 +92,10 @@ struct TextureGroup
 {
     ///< mat_tex can cover various aspects like pure color, roughness and normal distribution
     std::shared_ptr<Texture<Material*>> mat_tex;
+    ///< to clarify that... the normal_map here is mainly used for computing customized normal distribution
+    std::shared_ptr<Texture<Vec3>> normal_map;
     std::shared_ptr<Texture<Real>> bump_map;
-    ///< However, mat_tex cannot handle various image maps, so it is helpful to use an optional image texture
+    ///< However, mat_tex cannot handle various images, so it is helpful to use an optional image texture to provide more pattern
     std::shared_ptr<Texture<Spectrum>> image_tex;
 };
 #endif

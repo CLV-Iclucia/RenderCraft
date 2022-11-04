@@ -14,14 +14,14 @@ struct Intersection
 	Real dis = 0.0;
     Vec3 dpdu, dpdv;
     Vec3 dndu, dndv;
-	Material* mat = nullptr;
+	TextureGroup* tex = nullptr;
 	Intersection() = default;
 	Intersection(bool _hasIntersection, Vec3 P_, Vec3 _normal, Vec2 uv_, Real _dis,
-                 Vec3 dpdu_, Vec3 dpdv_, Vec3 dndu_, Vec3 dndv_, Material* _mat) :
+                 Vec3 dpdu_, Vec3 dpdv_, Vec3 dndu_, Vec3 dndv_, TextureGroup* _tex) :
 		hasIntersection(_hasIntersection), P(std::move(P_)), normal(std::move(_normal)),
                         uv(std::move(uv_)), dis(_dis), dpdu(std::move(dpdu_)),
                         dpdv(std::move(dpdv_)), dndu(std::move(dndu_)), dndv(std::move(dndv_)),
-                        mat(_mat) {}
+                        tex(_tex) {}
     /**
      * \brief calculate the ray differential, using the method in pbrt-v3
      */
