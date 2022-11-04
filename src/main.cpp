@@ -34,7 +34,7 @@ int main()
                 Vec3 dir({rx, ry, -1});
                 dir.normalize();
                 Ray ray({0, 0, 0}, dir);
-                color += scene.cast_ray(ray, 0);
+                color += scene.cast_ray(ray);
             }
             color /= Real(spp);
             if (color[0] >= 1.0)color[0] = 1.0;
