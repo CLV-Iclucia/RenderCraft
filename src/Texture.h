@@ -5,9 +5,7 @@
 #include <memory>
 /**
  * \brief All textures in RenderCraft are considered as "distribution".
- *        They describe the distribution of properties(materials, normals, colors, e.g.)
- *        And you can even use nested textures to create various effects.
- *        ConstantTexture is the atomic element, it encapsulates the property.
+ *        They describe the distribution of properties(roughness, normals, colors, e.g.)
  */
 
 /**
@@ -17,14 +15,14 @@ template<typename T>
 class Texture
 {
     public:
-        virtual T eval(Real u, Real v) const = 0;
+        virtual T eval(const Vec2&) const = 0;
 };
 
 template<typename T>
 class ConstantTexture : public Texture<T>
 {
     public:
-        T eval(Real u, Real v) const override { return tex; }
+        T eval(const Vec2&) const override { return tex; }
     private:
         T tex;
 };
@@ -50,7 +48,7 @@ class PerlinNoise : public Texture<T>
         /**
          * Todo: an interpolation method need to be implemented in XMath
          */
-        T eval(Real u, Real v) const override
+        T eval(const Vec2 uv) const override
         {
 
         }
@@ -66,13 +64,13 @@ class CheckerBoard : public Texture<T>
         std::shared_ptr<Texture<T> > texA, texB;
     public:
         CheckerBoard(const Texture<T>& A_, const Texture<T>& B_) : A(A_), B(B_) {}
-        T eval(Real u, Real v) const override
+        T eval(const Vec2& uv) const override
         {
-            int _u = floor(u / grid_w);
-            int _v = floor(u / grid_h);
-            u -= _u * grid_w;
-            v -= _v * grid_h;
-            return ((_u ^ _v) & 1) ? A->eval(u, v) : B->eval(u, v);
+            int _u = floor(uv[0] / grid_w);
+            int _v = floor(uv[1] / grid_h);
+            Real u = uv[0] - _u * grid_w;
+            Real v = uv[1] - _v * grid_h;
+            return ((_u ^ _v) & 1) ? A->eval({u, v}) : B->eval({u, v});
         }
 };
 
@@ -90,13 +88,9 @@ class ImageTexture : public Texture<T>
  */
 struct TextureGroup
 {
-    ///< mat_tex can cover various aspects like pure color, roughness and normal distribution
-    std::shared_ptr<Texture<Material*>> mat_tex;
-    ///< to clarify that... the normal_map here is mainly used for computing customized normal distribution
-    std::shared_ptr<Texture<Vec3>> normal_map;
-    std::shared_ptr<Texture<Real>> bump_map;
+    std::shared_ptr<Texture<Real> > bump_map;
     ///< However, mat_tex cannot handle various images, so it is helpful to use an optional image texture to provide more pattern
-    std::shared_ptr<Texture<Spectrum>> image_tex;
+    std::shared_ptr<Texture<Spectrum> > image_tex;
 };
 #endif
 

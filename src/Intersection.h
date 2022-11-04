@@ -15,6 +15,7 @@ struct Intersection
     Vec3 dpdu, dpdv;
     Vec3 dndu, dndv;
 	TextureGroup* tex = nullptr;
+    Material* mat = nullptr;
 	Intersection() = default;
 	Intersection(bool _hasIntersection, Vec3 P_, Vec3 _normal, Vec2 uv_, Real _dis,
                  Vec3 dpdu_, Vec3 dpdv_, Vec3 dndu_, Vec3 dndv_, TextureGroup* _tex) :

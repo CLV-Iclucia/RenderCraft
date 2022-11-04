@@ -15,7 +15,7 @@ Intersection Sphere::intersect(const Ray& ray) const
     inter.dis = (B + delta) >= 0 ? (delta - B) : -(delta + B);
     inter.P = ray(inter.dis);
     inter.normal = (inter.P - p).normalize();
-    inter.tex = tex;
+    inter.mat = mat;
     return inter;
 }
 

@@ -15,13 +15,6 @@ int main()
     int ScrWid = 4, ScrHeight = 4, ScrZ = -1;
     std::fstream fout("./output.ppm", std::ios_base::out);
     fout << "P3" << std::endl << nx << " " << ny << std::endl << 255 <<std::endl;
-    scene.load(new Sphere({0.0, 0.0, -1.0}, 0.5, Gold));
-    scene.load(new Sphere({0.0, -100.5, -1.0}, 100.0, Gold));
-    scene.load(new Sphere({1.0, 0.0, -1.0}, 0.5, Silver));
-    scene.load(new Sphere({-0.5, 0.0, -2.0}, 0.5, Copper));
-    scene.load(new Sphere({-1.5, 0.2, -1.3}, 0.2, Silver));
-    scene.load(new Sphere({-2.0, 0.6, 1.0}, 0.1, Gold));
-    scene.envMap = std::static_pointer_cast<EnvMap>(std::make_shared<Sky>(0.6, 0.0, 0.0, 0.6, 0.3, 0.3));
     for(int j = ny-1; j >= 0; j--)
     {
         for(int i = 0; i < nx; i++)

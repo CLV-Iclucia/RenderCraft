@@ -1,6 +1,7 @@
 #ifndef RENDERCRAFT_MICROFACET_H
 #define RENDERCRAFT_MICROFACET_H
 #include "../XMath/ext/Graphics/MathUtils.h"
+#include "Texture.h"
 struct Microfacet
 {
 	public:
@@ -24,6 +25,7 @@ class TrowbridgeModel : public Microfacet
 		Vec3 ImportanceSample(Real&) const override;
 	private:
 		Real alpha = 1.0;
+        std::shared_ptr<Texture<Real> > tex;
         Vec3 SampleVNDF(Real &pdf_inv) const;
 };
 #endif

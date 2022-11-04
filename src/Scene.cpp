@@ -43,6 +43,7 @@ Spectrum Scene::cast_ray(Ray& ray)
             else return envMap->evalEmission(wo);
         }
         Material* mat = inter.mat;
+        TextureGroup* tex = inter.tex;
         const Vec3& N = inter.normal;
         wo = -wo;
         if (checkInside(wo, N) && !mat->translucent) break;
