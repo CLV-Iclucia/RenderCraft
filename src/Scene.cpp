@@ -43,10 +43,10 @@ Spectrum Scene::cast_ray(Ray& ray)
             else return envMap->evalEmission(wo);
         }
         Material* mat = inter.mat;
-        TextureGroup* tex = inter.tex;
         const Vec3& N = inter.normal;
-        wo = -wo;
+        wo = to_local(, -wo);
         if (checkInside(wo, N) && !mat->translucent) break;
+        TextureGroup* tex = inter.tex;
         const Vec3& P = inter.P;
         Real pdf_inv;
         Vec3 wi = mat->sample(N, wo, pdf_inv);

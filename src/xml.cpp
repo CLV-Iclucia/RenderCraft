@@ -109,7 +109,7 @@ Scene* parse_scene(const std::shared_ptr<DOMNode>& o)
     if(o->tag_name == "scene")
     {
         scene = new Scene();
-        dfs(o, scene)
+        dfs(o, scene);
     }
 }
 

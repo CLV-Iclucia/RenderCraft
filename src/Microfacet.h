@@ -6,9 +6,9 @@ struct Microfacet
 {
 	public:
 		virtual Real NormalDistribution(Real) const = 0;
-		virtual Real SmithMonoShadow(Real) const = 0;
-		virtual Real ShadowMasking(Real, Real) const = 0;
-		virtual Vec3 ImportanceSample(Real&) const = 0;//(x, y, z, pdf_inv)
+		virtual Real SmithMonoShadow(Real, const Vec2&) const = 0;
+		virtual Real ShadowMasking(Real, Real, const Vec2&) const = 0;
+		virtual Vec3 ImportanceSample(Real&, const Vec2&) const = 0;//(x, y, z, pdf_inv)
 };
 //struct BeckmannModel : public Microfacet
 //{
@@ -18,15 +18,25 @@ struct Microfacet
 class TrowbridgeModel : public Microfacet
 {
 	public:
-		explicit TrowbridgeModel(Real _alpha) : alpha(_alpha) {}
-		Real NormalDistribution(Real) const override;
-		Real SmithMonoShadow(Real) const override;
-		Real ShadowMasking(Real, Real) const override;
-		Vec3 ImportanceSample(Real&) const override;
+		explicit TrowbridgeModel(Real _alpha) : alpha(std::make_shared(_alpha)) {}
+        explicit TrowbridgeModel(std::shared_ptr<Texture<Real> > _alpha) : alpha(_alpha) {}
+		Real NormalDistribution(Real, const Vec2&) const override;
+		Real SmithMonoShadow(Real, const Vec2&) const override;
+		Real ShadowMasking(Real, Real, const Vec2&) const override;
+		Vec3 ImportanceSample(Real&, const Vec2&) const override;
 	private:
-		Real alpha = 1.0;
-        std::shared_ptr<Texture<Vec3> > normal_map;
-        std::shared_ptr<Texture<Real> > tex;
+		std::shared_ptr<Texture<Real> > alpha;
         Vec3 SampleVNDF(Real &pdf_inv) const;
+};
+
+class NormalMapMicrofacet : public Microfacet
+{
+    public:
+        explicit NormalMapMicrofacet(std::shared_ptr<Texture<Vec3> >& tex) : normal_map(tex) {}
+        Real NormalDistribution(Real, const Vec2&) const override;
+		Real SmithMonoShadow(Real, const Vec2&) const override;
+		Real ShadowMasking(Real, Real, const Vec2&) const override;
+    private:
+        std::shared_ptr<Texture<Vec3> > normal_map;
 };
 #endif

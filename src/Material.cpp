@@ -28,7 +28,7 @@ Vec3 Metal::Fresnel(Real cosTheta) const
     const Vec3 Rp = Rv * (tmp - Tmp) / (tmp + Tmp);
     return (Rv * Rv + Rp * Rp) * 0.5;
 }
-Vec3 Metal::BxDF(const Vec3& wi, const Vec3& wo, const Vec3& N) const
+Vec3 Metal::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
 {
     Real cosThetaI = wi.dot(N) + EPS;
     Real cosThetaO = wo.dot(N) + EPS;
@@ -55,20 +55,6 @@ Vec3 Metal::sample(const Vec3& normal, const Vec3& wo, Real& pdf_inv) const
     pdf_inv *= 4.0 * cosTheta;
     return ret;
 }
-Vec3 Metal::eval(const Vec3& wi, const Vec3& wo, const Vec3& N) const
-{
-    const Real cosThetaI = N.dot(wi) + EPS;
-    const Real cosThetaO = N.dot(wo) + EPS;
-    const Vec3 H = (wi + wo).normalize();
-    const Vec3 Fr = Fresnel(cosThetaO);
-    Vec3 ret = Fr / cosThetaO *
-        surface->ShadowMasking(cosThetaI, cosThetaO) * H.dot(wi) / N.dot(H);
-    return ret;
-}
-Vec3 Lambertian::eval(const Vec3&, const Vec3&, const Vec3&) const
-{
-    return albedo * PI_INV;
-}
 Vec3 Lambertian::sample(const Vec3& normal, const Vec3&, Real& pdf_inv) const
 {
     Vec3 ret = cos_weighted_sample_hemisphere();
@@ -76,10 +62,10 @@ Vec3 Lambertian::sample(const Vec3& normal, const Vec3&, Real& pdf_inv) const
     pdf_inv = PI / std::max(ret[2], EPS);
     return TBN * ret;
 }
-Vec3 Lambertian::BxDF(const Vec3& wi, const Vec3& wo, const Vec3& N) const
+Vec3 Lambertian::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
 {
     if (wo.dot(N) < 0.0) return {};
-    else return albedo * PI_INV;
+    else return albedo->eval(uv) * PI_INV;
 }
 Vec3 Translucent::sample(const Vec3& N, const Vec3& wo, Real& pdf_inv) const
 {
@@ -156,10 +142,6 @@ Vec3 Translucent::sample(const Vec3& N, const Vec3& wo, Real& pdf_inv) const
         }
     }
 }
-Vec3 Translucent::eval(const Vec3& wi, const Vec3& wo, const Vec3& N) const
-{
-    return Vec3(0.0);
-}
 Real Translucent::Fresnel(Real cosThetaO, Real eta)
 {
     const Real sinThetaO = std::sqrt(1.0 - cosThetaO * cosThetaO);
@@ -171,7 +153,7 @@ Real Translucent::Fresnel(Real cosThetaO, Real eta)
     const Real Rv = (tmp - cosThetaO) / (cosThetaO + tmp);
     return (Rv * Rv + Rp * Rp) * 0.5;
 }
-Vec3 Translucent::BxDF(const Vec3& wi, const Vec3& wo, const Vec3& N) const
+Vec3 Translucent::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
 {
     Vec3 normal;
     bool inside = checkInside(wo, N);
@@ -186,7 +168,7 @@ Vec3 Translucent::BxDF(const Vec3& wi, const Vec3& wo, const Vec3& N) const
         Real HdotO = std::min(H.dot(wo), 1.0);
         Real Fr = 1.0 - HdotO * HdotO < eta * eta ? Fresnel(HdotO, eta) : 1.0;
         Real cosThetaH = std::max(normal.dot(H), 0.0);
-        Vec3 ret = 0.25 * Fr * color * surface->NormalDistribution(cosThetaH)
+        Vec3 ret = 0.25 * Fr * color->eval(uv) * surface->NormalDistribution(cosThetaH)
             / cosThetaO * surface->ShadowMasking(cosThetaI, cosThetaO) / cosThetaI;
         return ret;
     }
@@ -201,7 +183,7 @@ Vec3 Translucent::BxDF(const Vec3& wi, const Vec3& wo, const Vec3& N) const
         Real HdotWo = std::abs(H.dot(wo));
         const Real tmp = (HdotWo + eta * HdotWi);
         Vec3 ret = (1.0 - Fr) * std::abs(HdotWi) / cosThetaI * HdotWo / cosThetaO
-            * surface->NormalDistribution(cosThetaH) * color / (tmp * tmp) 
+            * surface->NormalDistribution(cosThetaH) * color / (tmp * tmp)
             * surface->ShadowMasking(cosThetaI, cosThetaO);
         return ret;
     }

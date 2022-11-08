@@ -4,13 +4,11 @@
 #include "Microfacet.h"
 #include <utility>
 #include "../XMath/ext/Graphics/MathUtils.h"
-#include
 struct Material
 {
     bool translucent;
     explicit Material(bool _translucent) { translucent = _translucent; }
-    virtual Vec3 BxDF(const Vec3&, const Vec3&, const Vec3&) const = 0;
-    virtual Vec3 eval(const Vec3&, const Vec3&, const Vec3&) const = 0;//calc the Monte Carlo Integration Term
+    virtual Vec3 BxDF(const Vec3&, const Vec3&, const Vec2&) const = 0;
     virtual Vec3 sample(const Vec3&, const Vec3&, Real&) const = 0;
 };
 class Lambertian : public Material //Lambertian diffuse
@@ -18,11 +16,10 @@ class Lambertian : public Material //Lambertian diffuse
     public:
         Lambertian(Real R, Real G, Real B) : albedo({ R, G, B }), Material(false) {}
         explicit Lambertian(Vec3 col) : albedo(std::move(col)), Material(false) {}
-        Vec3 eval(const Vec3&, const Vec3&, const Vec3&) const override;
         Vec3 sample(const Vec3&, const Vec3&, Real&) const override;
-        Vec3 BxDF(const Vec3&, const Vec3&, const Vec3&) const override;
+        Vec3 BxDF(const Vec3&, const Vec3&, const Vec2&) const override;
     private:
-        Vec3 albedo = {1.0, 1.0, 1.0};
+        std::shared_ptr<Texture<Vec3> > albedo = {1.0, 1.0, 1.0};
 };
 class Metal : public Material//using Torrance-Sparrow Model
 {
@@ -30,9 +27,8 @@ class Metal : public Material//using Torrance-Sparrow Model
         Metal(Real etaR, Real etaG, Real etaB, Real kR, Real kG, Real kB, Microfacet* surf) :
             eta({etaR, etaG, etaB}), k({kR, kG, kB}), surface(surf), Material(false) {}
         Metal(Vec3 _eta, Vec3 _k, Microfacet* surf) : eta(std::move(_eta)), k(std::move(_k)), surface(surf), Material(false) {}
-        Vec3 BxDF(const Vec3&, const Vec3&, const Vec3&) const override;
+        Vec3 BxDF(const Vec3&, const Vec3&, const Vec2&) const override;
         Vec3 sample(const Vec3&, const Vec3&, Real&) const override;
-        Vec3 eval(const Vec3&, const Vec3&, const Vec3&) const override;
     private:
         Vec3 Fresnel(Real) const;
         Microfacet* surface;//surface = nullptr means that the surface is smooth
@@ -51,8 +47,7 @@ class Translucent : public Material //translucent dielectrics
             surface(nullptr), color(std::move(_color)), Material(true) {}
         Translucent(Real _eta, Microfacet* surf) : etaA(_eta), surface(surf), color(1.0), Material(true) {}
         Vec3 sample(const Vec3&, const Vec3&, Real&) const override;
-        Vec3 eval(const Vec3&, const Vec3&, const Vec3&) const override;
-        Vec3 BxDF(const Vec3&, const Vec3&, const Vec3&) const override;
+        Vec3 BxDF(const Vec3&, const Vec3&, const Vec2&) const override;
     private:
         static Real Fresnel(Real, Real);
         Microfacet* surface;//surface = nullptr means that the surface is smooth

@@ -11,33 +11,36 @@
 //    return 0.0f;
 //}
 
-Real TrowbridgeModel::NormalDistribution(Real cosTheta) const
+Real TrowbridgeModel::NormalDistribution(Real cosTheta, const Vec2& uv) const
 {
-    const Real cosThetaSqr = cosTheta * cosTheta;
-    const Real alphaSqr = alpha * alpha;
+    Real cosThetaSqr = cosTheta * cosTheta;
+    Real Alpha = alpha->eval(uv);
+    Real alphaSqr = Alpha * Alpha;
     Real tmp = ((alphaSqr - 1.0) * cosThetaSqr + 1.0);
     tmp *= tmp;
     return PI_INV * alphaSqr / tmp;
 }
 
-Real TrowbridgeModel::SmithMonoShadow(Real cosThetaSqr) const
+Real TrowbridgeModel::SmithMonoShadow(Real cosThetaSqr, const Vec2& uv) const
 {
     const Real tanThetaSqr = (1.0 - cosThetaSqr) / std::max(cosThetaSqr, EPS);
-    return 2.0 / (std::sqrt(1.0 + alpha * alpha * tanThetaSqr) + 1.0);
+    Real Alpha = alpha->eval(uv);
+    return 2.0 / (std::sqrt(1.0 + Alpha * Alpha * tanThetaSqr) + 1.0);
 }
 
-Real TrowbridgeModel::ShadowMasking(Real cosThetaI, Real cosThetaO) const
+Real TrowbridgeModel::ShadowMasking(Real cosThetaI, Real cosThetaO, const Vec2& uv) const
 {
     Real cosThetaSqrI = cosThetaI * cosThetaI;
     Real cosThetaSqrO = cosThetaO * cosThetaO;
-    return SmithMonoShadow(cosThetaSqrI) * SmithMonoShadow(cosThetaSqrO);
+    return SmithMonoShadow(cosThetaSqrI, uv) * SmithMonoShadow(cosThetaSqrO, uv);
 }
 ///sample a half-vector on the hemisphere
-Vec3 TrowbridgeModel::ImportanceSample(Real& pdf_inv) const
+Vec3 TrowbridgeModel::ImportanceSample(Real& pdf_inv, const Vec2& uv) const
 {
     const Real Phi = get_random() * PI2;
     Real tmp = get_random();
-    const Real alphaSqr = alpha * alpha;
+    Real Alpha = alpha->eval(uv);
+    const Real alphaSqr = Alpha * Alpha;
     const Real cosThetaSqr = (1.0 - tmp) / (tmp * (alphaSqr - 1.0) + 1.0);
     Real cosTheta = std::sqrt(cosThetaSqr);
     const Real sinTheta = std::sqrt(1.0 - cosThetaSqr);
@@ -51,4 +54,9 @@ Vec3 TrowbridgeModel::ImportanceSample(Real& pdf_inv) const
 Vec3 TrowbridgeModel::SampleVNDF(Real& pdf_inv) const
 {
 
+}
+
+Real NormalMapMicrofacet::NormalDistribution(Real, const Vec2 &) const
+{
+    return 0;
 }
