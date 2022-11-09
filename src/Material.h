@@ -3,20 +3,19 @@
 #include "../XMath/ext/Graphics/MathUtils.h"
 #include "Microfacet.h"
 #include <utility>
-#include "../XMath/ext/Graphics/MathUtils.h"
 struct Material
 {
     bool translucent;
     explicit Material(bool _translucent) { translucent = _translucent; }
     virtual Vec3 BxDF(const Vec3&, const Vec3&, const Vec2&) const = 0;
-    virtual Vec3 sample(const Vec3&, const Vec3&, Real&) const = 0;
+    virtual Vec3 sample(const Vec3&, Real&) const = 0;
 };
 class Lambertian : public Material //Lambertian diffuse
 {
     public:
         Lambertian(Real R, Real G, Real B) : albedo({ R, G, B }), Material(false) {}
         explicit Lambertian(Vec3 col) : albedo(std::move(col)), Material(false) {}
-        Vec3 sample(const Vec3&, const Vec3&, Real&) const override;
+        Vec3 sample(const Vec3&, Real&) const override;
         Vec3 BxDF(const Vec3&, const Vec3&, const Vec2&) const override;
     private:
         std::shared_ptr<Texture<Vec3> > albedo = {1.0, 1.0, 1.0};
@@ -46,7 +45,7 @@ class Translucent : public Material //translucent dielectrics
         Translucent(Real _eta, Vec3 _color) : etaA(_eta),
             surface(nullptr), color(std::move(_color)), Material(true) {}
         Translucent(Real _eta, Microfacet* surf) : etaA(_eta), surface(surf), color(1.0), Material(true) {}
-        Vec3 sample(const Vec3&, const Vec3&, Real&) const override;
+        Vec3 sample(const Vec3&, Real&) const override;
         Vec3 BxDF(const Vec3&, const Vec3&, const Vec2&) const override;
     private:
         static Real Fresnel(Real, Real);

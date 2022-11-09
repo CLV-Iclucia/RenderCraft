@@ -38,7 +38,7 @@ Vec3 Metal::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
         / cosThetaO * surface->ShadowMasking(cosThetaI, cosThetaO) / cosThetaI;
     return ret;
 }
-Vec3 Metal::sample(const Vec3& normal, const Vec3& wo, Real& pdf_inv) const
+Vec3 Metal::sample(const Vec3& wo, Real& pdf_inv) const
 {
     Vec3 IS = surface->ImportanceSample(pdf_inv);
     Mat3 TBN = construct_frame(normal);
@@ -67,7 +67,7 @@ Vec3 Lambertian::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
     if (wo.dot(N) < 0.0) return {};
     else return albedo->eval(uv) * PI_INV;
 }
-Vec3 Translucent::sample(const Vec3& N, const Vec3& wo, Real& pdf_inv) const
+Vec3 Translucent::sample(const Vec3& wo, Real& pdf_inv) const
 {
     Vec3 normal;
     bool inside = checkInside(wo, N);

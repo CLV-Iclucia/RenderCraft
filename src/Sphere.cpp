@@ -1,5 +1,4 @@
 #include "Sphere.h"
-#include "../XMath/ext/Graphics/MathUtils.h"
 #include <cmath>
 Intersection Sphere::intersect(const Ray& ray) const
 {
@@ -21,10 +20,10 @@ Intersection Sphere::intersect(const Ray& ray) const
 
 Vec3 Sphere::getCoordMin() const
 {
-    return p;
+    return {p[0] - R, p[1] - R, p[2] - R};
 }
 
 Vec3 Sphere::getCoordMax() const
 {
-    return p;
+    return {p[0] + R, p[1] + R, p[2] + R};
 }
