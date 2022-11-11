@@ -30,65 +30,59 @@ Vec3 Metal::Fresnel(Real cosTheta) const
 }
 Vec3 Metal::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
 {
-    Real cosThetaI = wi.dot(N) + EPS;
-    Real cosThetaO = wo.dot(N) + EPS;
+    if(wo[2] < 0.0) return {};
+    Real cosThetaI = wi[2] + EPS;
+    Real cosThetaO = wo[2] + EPS;
     Vec3 H = (wi + wo).normalize();
-    Real cosThetaH = std::max(N.dot(H), 0.0);
+    Real cosThetaH = std::max(H[2], 0.0);
     Vec3 ret = 0.25 * Fresnel(std::min(H.dot(wo), 1.0)) * surface->NormalDistribution(cosThetaH)
-        / cosThetaO * surface->ShadowMasking(cosThetaI, cosThetaO) / cosThetaI;
+        / cosThetaO * surface->ShadowMasking(cosThetaI, cosThetaO, uv) / cosThetaI;
     return ret;
 }
-Vec3 Metal::sample(const Vec3& wo, Real& pdf_inv) const
+Vec3 Metal::sample(const Vec3& wo, Real& pdf_inv, const Vec2& uv) const
 {
-    Vec3 IS = surface->ImportanceSample(pdf_inv);
-    Mat3 TBN = construct_frame(normal);
-    Vec3 H = TBN * IS;
+    Vec3 H = surface->ImportanceSample(pdf_inv, uv);
     Real cosTheta = H.dot(wo);
     Vec3 ret = H * 2.0 * cosTheta - wo;
-    while (cosTheta < 0.0 || normal.dot(ret) < 0.0)
+    while (cosTheta < 0.0 || ret[2] < 0.0)
     {
-        IS = surface->ImportanceSample(pdf_inv);
-        H = TBN * IS;
+        H = surface->ImportanceSample(pdf_inv, uv);
         cosTheta = H.dot(wo);
         ret = H * 2.0 * cosTheta - wo;
     }
     pdf_inv *= 4.0 * cosTheta;
     return ret;
 }
-Vec3 Lambertian::sample(const Vec3& normal, const Vec3&, Real& pdf_inv) const
+Vec3 Lambertian::sample(const Vec3& wo, Real& pdf_inv, const Vec2& uv) const
 {
+    if(wo[2] < 0.0) return {};
     Vec3 ret = cos_weighted_sample_hemisphere();
-    Mat3 TBN = construct_frame(normal);
     pdf_inv = PI / std::max(ret[2], EPS);
-    return TBN * ret;
+    return ret;
 }
 Vec3 Lambertian::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
 {
-    if (wo.dot(N) < 0.0) return {};
+    if (wo[2] < 0.0) return {};
     else return albedo->eval(uv) * PI_INV;
 }
-Vec3 Translucent::sample(const Vec3& wo, Real& pdf_inv) const
+Vec3 Translucent::sample(const Vec3& wo, Real& pdf_inv, const Vec2& uv) const
 {
-    Vec3 normal;
-    bool inside = checkInside(wo, N);
-    if (inside) normal = N * (-1.0);
-    else normal = N;
-    Mat3 TBN = construct_frame(normal);
-    const Real eta = inside ? etaB / etaA : etaA / etaB; //eta = etaI / etaO
-    Vec3 H, IS;
-    const Real etaSqr = eta * eta;
-    Real cosThetaO = normal.dot(wo);
+    bool inside = wo[2] < 0.0;
+    Real eta = inside ? etaB / etaA : etaA / etaB; //eta = etaI / etaO
+    Vec3 Wo = wo; // we flip the wo, it is just like we flip the z-axis
+    if(inside) Wo[2] = -Wo[2];
+    Vec3 H;
+    Real etaSqr = eta * eta;
     Real cosTheta;
     Vec3 reflect_wi, refract_wi;
-    if (1 - cosThetaO * cosThetaO > etaSqr)//sample reflection light only, else we can't compute Fresnel term
+    if (1 - wo[2] * wo[2] > etaSqr)//sample reflection light only, else we can't compute Fresnel term
     {
         while (true)
         {
-            IS = surface->ImportanceSample(pdf_inv);
-            H = TBN * IS;
-            cosTheta = H.dot(wo);
-            reflect_wi = H * 2.0 * cosTheta - wo;
-            if (normal.dot(reflect_wi) < 0.0) continue;
+            H = surface->ImportanceSample(pdf_inv, uv);
+            cosTheta = H.dot(Wo);
+            reflect_wi = H * 2.0 * cosTheta - Wo;
+            if (reflect_wi[2] < 0.0) continue;
             pdf_inv *= 4.0 * cosTheta;
             return reflect_wi;
         }
@@ -97,20 +91,19 @@ Vec3 Translucent::sample(const Vec3& wo, Real& pdf_inv) const
     {
         while (true) //keep generating samples until we produce valid samples
         {
-            IS = surface->ImportanceSample(pdf_inv);
-            H = TBN * IS;
+            H = surface->ImportanceSample(pdf_inv, uv);
             cosTheta = H.dot(wo);
             reflect_wi = H * 2.0 * cosTheta - wo;
             if (1.0 - cosTheta * cosTheta > etaSqr)//a total reflection
             {
-                if (normal.dot(reflect_wi) < 0.0) continue;
+                if (reflect_wi[2] < 0.0) continue;
                 pdf_inv *= 4.0 * cosTheta;
                 return reflect_wi;
             }
             refract_wi = refract(wo, H, eta).normalize();
-            if (normal.dot(reflect_wi) < 0.0)//in this case it is only possible to generate a refraction light
+            if (reflect_wi[2] < 0.0)//in this case it is only possible to generate a refraction light
             {
-                if (normal.dot(refract_wi) > 0.0) continue;
+                if (refract_wi[2] > 0.0) continue;
                 else
                 {
                     const Real cosThetaI = H.dot(refract_wi);
@@ -119,7 +112,7 @@ Vec3 Translucent::sample(const Vec3& wo, Real& pdf_inv) const
                     return refract_wi;
                 }
             }
-            else if (normal.dot(refract_wi) > 0.0)//in this case it is only possible to generate a reflection light
+            else if (refract_wi[2] > 0.0)//in this case it is only possible to generate a reflection light
             {
                 pdf_inv *= 4.0 * cosTheta;
                 return reflect_wi;
@@ -155,36 +148,39 @@ Real Translucent::Fresnel(Real cosThetaO, Real eta)
 }
 Vec3 Translucent::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
 {
-    Vec3 normal;
-    bool inside = checkInside(wo, N);
-    if (inside) normal = N * (-1.0);
-    else normal = N;
+    bool inside = wo[2] < 0.0;
     Real eta = inside ? etaB / etaA : etaA / etaB; //eta = etaI / etaO
-    Real cosThetaO = std::min(normal.dot(wo), 1.0);
-    Real cosThetaI = normal.dot(wi);
+    Vec3 Wo = wo, Wi = wi;
+    if(inside)
+    {
+        Wi[2] = -Wi[2];
+        Wo[2] = -Wo[2];
+    }
+    Real cosThetaO = std::min(Wo[2], 1.0);
+    Real cosThetaI = Wi[2];
     if (cosThetaI >= 0.0) //a reflection light
     {
-        Vec3 H = (wi + wo).normalize();
-        Real HdotO = std::min(H.dot(wo), 1.0);
+        Vec3 H = (Wi + Wo).normalize();
+        Real HdotO = std::min(H.dot(Wo), 1.0);
         Real Fr = 1.0 - HdotO * HdotO < eta * eta ? Fresnel(HdotO, eta) : 1.0;
-        Real cosThetaH = std::max(normal.dot(H), 0.0);
+        Real cosThetaH = std::max(H[2], 0.0);
         Vec3 ret = 0.25 * Fr * color->eval(uv) * surface->NormalDistribution(cosThetaH)
-            / cosThetaO * surface->ShadowMasking(cosThetaI, cosThetaO) / cosThetaI;
+            / cosThetaO * surface->ShadowMasking(cosThetaI, cosThetaO, uv) / cosThetaI;
         return ret;
     }
     else //a refraction light
     {
         cosThetaI = -cosThetaI;
-        const Vec3 H = (wi * eta + wo).normalize();
-        Real HdotO = std::min(H.dot(wo), 1.0);
+        Vec3 H = (Wi * eta + Wo).normalize();
+        Real HdotO = std::min(H.dot(Wo), 1.0);
         Real Fr = 1.0 - HdotO * HdotO < eta * eta ? Fresnel(HdotO, eta) : 1.0;
-        const Real cosThetaH = std::abs(normal.dot(H));
-        Real HdotWi = H.dot(wi);
-        Real HdotWo = std::abs(H.dot(wo));
-        const Real tmp = (HdotWo + eta * HdotWi);
+        Real cosThetaH = std::abs(H[2]);
+        Real HdotWi = H.dot(Wi);
+        Real HdotWo = std::abs(H.dot(Wo));
+        Real tmp = (HdotWo + eta * HdotWi);
         Vec3 ret = (1.0 - Fr) * std::abs(HdotWi) / cosThetaI * HdotWo / cosThetaO
-            * surface->NormalDistribution(cosThetaH) * color / (tmp * tmp)
-            * surface->ShadowMasking(cosThetaI, cosThetaO);
+            * surface->NormalDistribution(cosThetaH) * color->eval(uv) / (tmp * tmp)
+            * surface->ShadowMasking(cosThetaI, cosThetaO, uv);
         return ret;
     }
 }

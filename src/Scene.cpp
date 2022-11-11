@@ -43,26 +43,27 @@ Spectrum Scene::cast_ray(Ray& ray)
             else return envMap->evalEmission(wo);
         }
         Material* mat = inter.mat;
-        const Vec3& N = inter.normal;
         Mat3 TBN = construct_frame(inter.normal);
         wo = -wo;
         world_to_local(TBN, wo);
-        if (wo[2] < 0.0 && !mat->translucent) break;
         TextureGroup* tex = inter.tex;
+        Vec2& uv = inter.uv;
         const Vec3& P = inter.P;
         Real pdf_inv;
-        Vec3 wi = mat->sample(wo, pdf_inv);
+        Vec3 wi = mat->sample(wo, pdf_inv, uv);
+        local_to_world(TBN, wi);
         Intersection dir_inter = intersect(Ray(P, wi));
         if (!dir_inter.hasIntersection)//calc the direct radiance from the environment/sky
         {
             Spectrum dir_rad = envMap->evalEmission(wi);
-            Real cosThetaI = std::abs(N.dot(wi));
-            ret += throughput * pdf_inv * mat->BxDF(wi, wo) * cosThetaI * dir_rad;//Using Monte Carlo Integration
+            Real cosThetaI = std::abs(wi[2]);
+            ret += throughput * pdf_inv * mat->BxDF(wi, wo, uv) * cosThetaI * dir_rad;//Using Monte Carlo Integration
         }
         if (get_random() > PRR) break;//sample at a probability of PRR and terminate at a probability of 1-PRR
-        wi = mat->sample(N, wo, pdf_inv);//calculate the indirect radiance
-        const Real cosThetaI = std::abs(N.dot(wi));
-        throughput *= mat->BxDF(wi, wo) * pdf_inv * cosThetaI / PRR;
+        wi = mat->sample(wo, pdf_inv, uv);
+        local_to_world(TBN, wi);//calculate the indirect radiance
+        const Real cosThetaI = std::abs(wi[2]);
+        throughput *= mat->BxDF(wi, wo, uv) * pdf_inv * cosThetaI / PRR;
         orig = P;
         wo = wi;
     }

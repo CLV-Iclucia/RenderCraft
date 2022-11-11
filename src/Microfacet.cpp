@@ -37,18 +37,28 @@ Real TrowbridgeModel::ShadowMasking(Real cosThetaI, Real cosThetaO, const Vec2& 
 ///sample a half-vector on the hemisphere
 Vec3 TrowbridgeModel::ImportanceSample(Real& pdf_inv, const Vec2& uv) const
 {
-    const Real Phi = get_random() * PI2;
+    Real Phi = get_random() * PI2;
     Real tmp = get_random();
-    Real Alpha = alpha->eval(uv);
-    const Real alphaSqr = Alpha * Alpha;
-    const Real cosThetaSqr = (1.0 - tmp) / (tmp * (alphaSqr - 1.0) + 1.0);
-    Real cosTheta = std::sqrt(cosThetaSqr);
-    const Real sinTheta = std::sqrt(1.0 - cosThetaSqr);
-    tmp = (alphaSqr - 1) * cosThetaSqr + 1.0;
-    tmp *= tmp;
-    pdf_inv = tmp / cosTheta * PI / alphaSqr;
-    Vec3 H({ sinTheta * std::cos(Phi), sinTheta * std::sin(Phi), cosTheta });
-    return H;
+    try
+    {
+        Real Alpha = alpha->eval(uv);
+        Real alphaSqr = Alpha * Alpha;
+        Real cosThetaSqr = (1.0 - tmp) / (tmp * (alphaSqr - 1.0) + 1.0);
+        Real cosTheta = std::sqrt(cosThetaSqr);
+        if(cosThetaSqr > 1.0) throw std::runtime_error("ERROR: cosine greater than 1 "
+                                                   "in TrowbridgeModel::ImportanceSample");
+        Real sinTheta = std::sqrt(1.0 - cosThetaSqr);
+        tmp = (alphaSqr - 1) * cosThetaSqr + 1.0;
+        tmp *= tmp;
+        pdf_inv = tmp / cosTheta * PI / alphaSqr;
+        Vec3 H({ sinTheta * std::cos(Phi), sinTheta * std::sin(Phi), cosTheta });
+        return H;
+    }
+    catch(std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+        return {};
+    }
 }
 
 Vec3 TrowbridgeModel::SampleVNDF(Real& pdf_inv) const
