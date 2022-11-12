@@ -44,11 +44,10 @@ Vec3 Metal::sample(const Vec3& wo, Real& pdf_inv, const Vec2& uv) const
     Vec3 H = surface->ImportanceSample(pdf_inv, uv);
     Real cosTheta = H.dot(wo);
     Vec3 ret = H * 2.0 * cosTheta - wo;
-    while (cosTheta < 0.0 || ret[2] < 0.0)
+    if(cosTheta < 0.0 || ret[2] < 0.0)
     {
-        H = surface->ImportanceSample(pdf_inv, uv);
-        cosTheta = H.dot(wo);
-        ret = H * 2.0 * cosTheta - wo;
+        pdf_inv = 0.0;
+        return {};
     }
     pdf_inv *= 4.0 * cosTheta;
     return ret;
@@ -71,80 +70,61 @@ Vec3 Translucent::sample(const Vec3& wo, Real& pdf_inv, const Vec2& uv) const
     Real eta = inside ? etaB / etaA : etaA / etaB; //eta = etaI / etaO
     Vec3 Wo = wo; // we flip the wo, it is just like we flip the z-axis
     if(inside) Wo[2] = -Wo[2];
-    Vec3 H;
+    Vec3 H = surface->ImportanceSample(pdf_inv, uv);
     Real etaSqr = eta * eta;
-    Real cosTheta;
-    Vec3 reflect_wi, refract_wi;
-    if (1 - wo[2] * wo[2] > etaSqr)//sample reflection light only, else we can't compute Fresnel term
+    Real cosTheta = H.dot(Wo);
+    Real Fr = Fresnel(cosTheta, eta);
+    if(get_random() < Fr)//sample reflection light
     {
-        while (true)
+        Vec3 reflect_wi = H * 2.0 * cosTheta - Wo;
+        if (reflect_wi[2] < 0.0)
         {
-            H = surface->ImportanceSample(pdf_inv, uv);
-            cosTheta = H.dot(Wo);
-            reflect_wi = H * 2.0 * cosTheta - Wo;
-            if (reflect_wi[2] < 0.0) continue;
-            pdf_inv *= 4.0 * cosTheta;
-            return reflect_wi;
+            pdf_inv = 0.0;
+            return {};
         }
+        pdf_inv *= 4.0 * cosTheta;
+        return reflect_wi;
     }
     else
     {
-        while (true) //keep generating samples until we produce valid samples
+        Vec3 refract_wi = refract(Wo, H, eta).normalize();
+        if (refract_wi[2] > 0.0)//in this case it is only possible to generate a reflection light
         {
-            H = surface->ImportanceSample(pdf_inv, uv);
-            cosTheta = H.dot(wo);
-            reflect_wi = H * 2.0 * cosTheta - wo;
-            if (1.0 - cosTheta * cosTheta > etaSqr)//a total reflection
-            {
-                if (reflect_wi[2] < 0.0) continue;
-                pdf_inv *= 4.0 * cosTheta;
-                return reflect_wi;
-            }
-            refract_wi = refract(wo, H, eta).normalize();
-            if (reflect_wi[2] < 0.0)//in this case it is only possible to generate a refraction light
-            {
-                if (refract_wi[2] > 0.0) continue;
-                else
-                {
-                    const Real cosThetaI = H.dot(refract_wi);
-                    const Real tmp = (cosTheta + eta * cosThetaI);
-                    pdf_inv *= tmp * tmp / (etaSqr * std::abs(cosThetaI));
-                    return refract_wi;
-                }
-            }
-            else if (refract_wi[2] > 0.0)//in this case it is only possible to generate a reflection light
-            {
-                pdf_inv *= 4.0 * cosTheta;
-                return reflect_wi;
-            }
-            else
-            {
-                if (get_random() < 0.5)
-                {
-                    pdf_inv *= 8.0 * cosTheta;
-                    return reflect_wi;
-                }
-                else
-                {
-                    const Real cosThetaI = H.dot(refract_wi);
-                    const Real tmp = (cosTheta + eta * cosThetaI);
-                    pdf_inv *= 2.0 * tmp * tmp / (etaSqr * std::abs(cosThetaI));
-                    return refract_wi;
-                }
-            }
+            pdf_inv = 0.0;
+            return {};
+        }
+        else
+        {
+            Real cosThetaI = H.dot(refract_wi);
+            Real tmp = (cosTheta + eta * cosThetaI);
+            pdf_inv *= 2.0 * tmp * tmp / (etaSqr * std::abs(cosThetaI));
+            if(inside) refract_wi[2] = -refract_wi[2];
+            return refract_wi;
         }
     }
 }
 Real Translucent::Fresnel(Real cosThetaO, Real eta)
 {
-    const Real sinThetaO = std::sqrt(1.0 - cosThetaO * cosThetaO);
-    const Real sinThetaI = sinThetaO / eta;
-    const Real cosThetaI = std::sqrt(1.0 - sinThetaI * sinThetaI);
-    Real tmp = eta * cosThetaO;
-    const Real Rp = (cosThetaI - tmp) / (tmp + cosThetaI);
-    tmp = eta * cosThetaI;
-    const Real Rv = (tmp - cosThetaO) / (cosThetaO + tmp);
-    return (Rv * Rv + Rp * Rp) * 0.5;
+    try
+    {
+        Real sinThetaO = std::sqrt(1.0 - cosThetaO * cosThetaO);
+        if(cosThetaO > 1.0)
+            throw std::runtime_error("ERROR: cosine greater than 1 in Translucent::Fresnel.");
+        Real sinThetaI = sinThetaO / eta;
+        if(sinThetaI > 1.0)
+            throw std::runtime_error("ERROR: sine greater than 1 in Translucent::Fresnel.");
+        Real cosThetaI = std::sqrt(1.0 - sinThetaI * sinThetaI);
+        Real tmp = eta * cosThetaO;
+        Real Rp = (cosThetaI - tmp) / (tmp + cosThetaI);
+        tmp = eta * cosThetaI;
+        Real Rv = (tmp - cosThetaO) / (cosThetaO + tmp);
+        return (Rv * Rv + Rp * Rp) * 0.5;
+    }
+    catch(std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+        return 0.0;
+    }
 }
 Vec3 Translucent::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
 {
