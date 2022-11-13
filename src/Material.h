@@ -11,12 +11,12 @@ struct Material
 class Lambertian : public Material //Lambertian diffuse
 {
     public:
-        Lambertian(Real R, Real G, Real B) : albedo({ R, G, B }) {}
-        explicit Lambertian(Vec3 col) : albedo(std::move(col)) {}
+        Lambertian(Real R, Real G, Real B) : albedo(std::static_pointer_cast<Texture>(std::make_shared<ConstantTexture>({ R, G, B }))) {}
+        explicit Lambertian(Vec3 col) : albedo(std::static_pointer_cast<Texture>(std::make_shared<ConstantTexture>(col))) {}
         Vec3 sample(const Vec3&, Real&, const Vec2&) const override;
         Vec3 BxDF(const Vec3&, const Vec3&, const Vec2&) const override;
     private:
-        std::shared_ptr<Texture<Vec3> > albedo = {1.0, 1.0, 1.0};
+        std::shared_ptr<Texture<Vec3> > albedo;
 };
 class Metal : public Material//using Torrance-Sparrow Model
 {
@@ -35,18 +35,19 @@ class Metal : public Material//using Torrance-Sparrow Model
 class Translucent : public Material //translucent dielectrics
 {
     public:
-        Translucent(Real _eta, Microfacet* surf, Real R, Real G, Real B) : etaA(_eta),
-            surface(surf), color({ R, G, B }), Material(true) {}
-        Translucent(Real _eta, Microfacet* surf, Vec3 _color) : etaA(_eta),
-            surface(surf), color(std::move(_color)), Material(true) {}
-        Translucent(Real _eta, Vec3 _color) : etaA(_eta),
-            surface(nullptr), color(std::move(_color)), Material(true) {}
-        Translucent(Real _eta, Microfacet* surf) : etaA(_eta), surface(surf), color(1.0), Material(true) {}
+        Translucent(Real _eta, Microfacet* surf, Real R, Real G, Real B) : etaA(_eta), surface(surf),
+            color(std::static_pointer_cast<Texture>(std::make_shared<ConstantTextuure>({ R, G, B }))) {}
+        Translucent(Real _eta, Microfacet* surf, const Vec3& _color) : etaA(_eta), surface(surf),
+            color(std::static_pointer_cast<Texture>(std::make_shared<ConstantTexture>(_color))) {}
+         Translucent(Real _eta, Microfacet* surf, Vec3&& _color) : etaA(_eta), surface(surf),
+            color(std::static_pointer_cast<Texture>(std::make_shared<ConstantTexture>(_color))) {}
+        Translucent(Real _eta, Microfacet* surf) : etaA(_eta), surface(surf),
+            color(std::static_pointer_cast<Texture>(std::make_shared<ConstantTexture>({1.0, 1.0, 1.0}))) {}
         Vec3 sample(const Vec3&, Real&, const Vec2&) const override;
         Vec3 BxDF(const Vec3&, const Vec3&, const Vec2&) const override;
     private:
         static Real Fresnel(Real, Real);
-        Microfacet* surface;//surface = nullptr means that the surface is smooth
+        Microfacet* surface = nullptr;//surface = nullptr means that the surface is smooth
         std::shared_ptr<Texture<Vec3> > color;
         Real etaA, etaB = 1.0;//etaA: eta of the media inside; etaB: eta of the media outside
 };//by default etaB is set to 1, eta of the vacuum

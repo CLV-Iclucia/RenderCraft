@@ -66,7 +66,7 @@ Vec3 TrowbridgeModel::SampleVNDF(Real& pdf_inv) const
 
 }
 
-Real NormalMapMicrofacet::NormalDistribution(Real, const Vec2 &) const
+Real NormalMapMicrofacet::NormalDistribution(Real, const Vec2& uv) const
 {
     return 0;
 }

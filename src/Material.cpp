@@ -35,7 +35,7 @@ Vec3 Metal::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
     Real cosThetaO = wo[2] + EPS;
     Vec3 H = (wi + wo).normalize();
     Real cosThetaH = std::max(H[2], 0.0);
-    Vec3 ret = 0.25 * Fresnel(std::min(H.dot(wo), 1.0)) * surface->NormalDistribution(cosThetaH)
+    Vec3 ret = 0.25 * Fresnel(std::min(H.dot(wo), 1.0)) * surface->NormalDistribution(cosThetaH, uv)
         / cosThetaO * surface->ShadowMasking(cosThetaI, cosThetaO, uv) / cosThetaI;
     return ret;
 }
@@ -144,7 +144,7 @@ Vec3 Translucent::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
         Real HdotO = std::min(H.dot(Wo), 1.0);
         Real Fr = 1.0 - HdotO * HdotO < eta * eta ? Fresnel(HdotO, eta) : 1.0;
         Real cosThetaH = std::max(H[2], 0.0);
-        Vec3 ret = 0.25 * Fr * color->eval(uv) * surface->NormalDistribution(cosThetaH)
+        Vec3 ret = 0.25 * Fr * color->eval(uv) * surface->NormalDistribution(cosThetaH, uv)
             / cosThetaO * surface->ShadowMasking(cosThetaI, cosThetaO, uv) / cosThetaI;
         return ret;
     }

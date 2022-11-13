@@ -22,6 +22,8 @@ template<typename T>
 class ConstantTexture : public Texture<T>
 {
     public:
+        ConstantTexture(const T& _tex) : tex(_tex) {}
+        ConstantTexture(T&& _tex) : tex(std::move(_tex)) {}
         T eval(const Vec2&) const override { return tex; }
     private:
         T tex;

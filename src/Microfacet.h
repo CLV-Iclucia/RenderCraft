@@ -5,7 +5,7 @@
 struct Microfacet
 {
 	public:
-		virtual Real NormalDistribution(Real) const = 0;
+		virtual Real NormalDistribution(Real, const Vec2& uv) const = 0;
 		virtual Real SmithMonoShadow(Real, const Vec2&) const = 0;
 		virtual Real ShadowMasking(Real, Real, const Vec2&) const = 0;
 		virtual Vec3 ImportanceSample(Real&, const Vec2&) const = 0;//(x, y, z, pdf_inv)
@@ -18,8 +18,8 @@ struct Microfacet
 class TrowbridgeModel : public Microfacet
 {
 	public:
-		explicit TrowbridgeModel(Real _alpha) : alpha(std::make_shared(_alpha)) {}
-        explicit TrowbridgeModel(std::shared_ptr<Texture<Real> > _alpha) : alpha(_alpha) {}
+		explicit TrowbridgeModel(Real _alpha) : alpha(std::static_pointer_cast<Texture>(std::make_shared<ConstantTexture>(_alpha))) {}
+        explicit TrowbridgeModel(std::shared_ptr<Texture<Real> >& _alpha) : alpha(_alpha) {}
 		Real NormalDistribution(Real, const Vec2&) const override;
 		Real SmithMonoShadow(Real, const Vec2&) const override;
 		Real ShadowMasking(Real, Real, const Vec2&) const override;
