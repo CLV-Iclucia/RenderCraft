@@ -1,29 +1,28 @@
 #include "Sphere.h"
 #include <cmath>
-Intersection Sphere::intersect(const Ray& ray) const
+Intersection Sphere::intersect(const Ray& ray, const Vec3& world_pos) const
 {
-    const Vec3 dif = ray.orig - p;
-    const Real B = dif.dot(ray.dir);
-    const Real C = dif.dot(dif) - R * R;
+    Vec3 dif = ray.orig - world_pos;
+    Real B = dif.dot(ray.dir);
+    Real C = dif.dot(dif) - R * R;
     Real delta = B * B - C;
     Intersection inter;
     if (delta < 0.0) return inter;
     delta = std::sqrt(delta);
-    if (delta < B)return inter;
+    if (delta < B) return inter;
     inter.hasIntersection = true;
     inter.dis = (B + delta) >= 0 ? (delta - B) : -(delta + B);
     inter.P = ray(inter.dis);
-    inter.normal = (inter.P - p).normalize();
-    inter.mat = mat;
+    inter.normal = (inter.P - world_pos).normalize();
     return inter;
 }
 
-Vec3 Sphere::getCoordMin() const
+Vec3 Sphere::getLocalCoordMin() const
 {
-    return {p[0] - R, p[1] - R, p[2] - R};
+    return { -R, -R, -R };
 }
 
-Vec3 Sphere::getCoordMax() const
+Vec3 Sphere::getLocalCoordMax() const
 {
-    return {p[0] + R, p[1] + R, p[2] + R};
+    return { R, R, R };
 }

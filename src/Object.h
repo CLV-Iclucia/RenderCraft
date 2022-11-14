@@ -5,18 +5,20 @@
 #include "Intersection.h"
 #include "Ray.hpp"
 #include "../XMath/ext/Graphics/MathUtils.h"
+#include "Shape.h"
+
 class Object
 {
 	public:
 		Object() = default;
 		explicit Object(Vec3 _p, Material* _mat) : p(std::move(_p)), mat(_mat) {}
-		virtual Intersection intersect(const Ray& ray) const = 0;
+		Intersection intersect(const Ray&) const;
 		virtual ~Object() = default;
 		Real getX() const { return p[0]; }
-		virtual Vec3 getCoordMin() const = 0;
-		virtual Vec3 getCoordMax() const = 0;
+
 	protected:
 		Vec3 p;
+        Shape* shape = nullptr;
         Material* mat = nullptr;
         TextureGroup* tex = nullptr;
 };
