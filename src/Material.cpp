@@ -159,7 +159,7 @@ Vec3 Translucent::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
         Real HdotWo = std::abs(H.dot(Wo));
         Real tmp = (HdotWo + eta * HdotWi);
         Vec3 ret = (1.0 - Fr) * std::abs(HdotWi) / cosThetaI * HdotWo / cosThetaO
-            * surface->NormalDistribution(cosThetaH) * color->eval(uv) / (tmp * tmp)
+            * surface->NormalDistribution(cosThetaH, uv) * color->eval(uv) / (tmp * tmp)
             * surface->ShadowMasking(cosThetaI, cosThetaO, uv);
         return ret;
     }

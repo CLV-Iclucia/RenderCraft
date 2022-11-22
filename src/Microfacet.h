@@ -18,8 +18,7 @@ struct Microfacet
 class TrowbridgeModel : public Microfacet
 {
 	public:
-		explicit TrowbridgeModel(Real _alpha) : alpha(std::static_pointer_cast<Texture>(std::make_shared<ConstantTexture>(_alpha))) {}
-        explicit TrowbridgeModel(std::shared_ptr<Texture<Real> >& _alpha) : alpha(_alpha) {}
+        explicit TrowbridgeModel(const std::shared_ptr<Texture<Real> >& _alpha) : alpha(_alpha) {}
 		Real NormalDistribution(Real, const Vec2&) const override;
 		Real SmithMonoShadow(Real, const Vec2&) const override;
 		Real ShadowMasking(Real, Real, const Vec2&) const override;

@@ -1,5 +1,5 @@
-#ifndef RENDERCRAFT_RAY_HPP
-#define RENDERCRAFT_RAY_HPP
+#ifndef RENDERCRAFT_RAY_H
+#define RENDERCRAFT_RAY_H
 #include "../XMath/ext/Graphics/MathUtils.h"
 struct Ray
 {

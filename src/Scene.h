@@ -4,7 +4,7 @@
 #include "Object.h"
 #include "../XMath/ext/Vector.h"
 #include "Intersection.h"
-#include "Ray.hpp"
+#include "Ray.h"
 #include <algorithm>
 #include <memory>
 #include "BVH.h"

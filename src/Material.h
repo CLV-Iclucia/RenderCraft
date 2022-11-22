@@ -11,7 +11,7 @@ struct Material
 class Lambertian : public Material //Lambertian diffuse
 {
     public:
-        Lambertian(Real R, Real G, Real B) : albedo(std::static_pointer_cast<Texture>(std::make_shared<ConstantTexture>({ R, G, B }))) {}
+        Lambertian(const std::shared_ptr<Texture<Vec3> >& _albedo) : albedo(_albedo){}
         explicit Lambertian(Vec3 col) : albedo(std::static_pointer_cast<Texture>(std::make_shared<ConstantTexture>(col))) {}
         Vec3 sample(const Vec3&, Real&, const Vec2&) const override;
         Vec3 BxDF(const Vec3&, const Vec3&, const Vec2&) const override;
@@ -35,12 +35,10 @@ class Metal : public Material//using Torrance-Sparrow Model
 class Translucent : public Material //translucent dielectrics
 {
     public:
-        Translucent(Real _eta, Microfacet* surf, Real R, Real G, Real B) : etaA(_eta), surface(surf),
-            color(std::static_pointer_cast<Texture>(std::make_shared<ConstantTextuure>({ R, G, B }))) {}
-        Translucent(Real _eta, Microfacet* surf, const Vec3& _color) : etaA(_eta), surface(surf),
-            color(std::static_pointer_cast<Texture>(std::make_shared<ConstantTexture>(_color))) {}
-         Translucent(Real _eta, Microfacet* surf, Vec3&& _color) : etaA(_eta), surface(surf),
-            color(std::static_pointer_cast<Texture>(std::make_shared<ConstantTexture>(_color))) {}
+        Translucent(Real _eta, Microfacet* surf, const std::shared_ptr<Texture<Vec3> >& _color) : etaA(_eta), surface(surf),
+            color(std::static_pointer_cast<Texture>(_color) {}
+        Translucent(Real _eta, Microfacet* surf, const std::shared_ptr<Texture<Vec3> >& _albedo) : etaA(_eta), surface(surf),
+            color(std::static_pointer_cast<Texture>(_color) {}
         Translucent(Real _eta, Microfacet* surf) : etaA(_eta), surface(surf),
             color(std::static_pointer_cast<Texture>(std::make_shared<ConstantTexture>({1.0, 1.0, 1.0}))) {}
         Vec3 sample(const Vec3&, Real&, const Vec2&) const override;

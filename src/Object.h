@@ -3,7 +3,7 @@
 #include <utility>
 
 #include "Intersection.h"
-#include "Ray.hpp"
+#include "Ray.h"
 #include "../XMath/ext/Graphics/MathUtils.h"
 #include "Shape.h"
 

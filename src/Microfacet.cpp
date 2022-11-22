@@ -70,3 +70,13 @@ Real NormalMapMicrofacet::NormalDistribution(Real, const Vec2& uv) const
 {
     return 0;
 }
+
+Real NormalMapMicrofacet::SmithMonoShadow(Real, const Vec2 &) const
+{
+    return 0;
+}
+
+Real NormalMapMicrofacet::ShadowMasking(Real, Real, const Vec2 &) const
+{
+    return 0;
+}

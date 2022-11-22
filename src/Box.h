@@ -2,7 +2,7 @@
 #define RENDERCRAFT_BOX_H
 #include "Object.h"
 #include "Intersection.h"
-#include "Ray.hpp"
+#include "Ray.h"
 class Box : Object
 {
 	public:

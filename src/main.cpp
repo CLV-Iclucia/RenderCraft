@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <algorithm>
 #include <cmath>
-#include "Ray.hpp"
+#include "Ray.h"
 #include "Sphere.h"
 #include "Scene.h"
 #include "Materials.h"

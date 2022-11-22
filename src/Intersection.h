@@ -5,7 +5,7 @@
 #include "../XMath/ext/Graphics/MathUtils.h"
 #include "Material.h"
 #include "Texture.h"
-#include "Ray.hpp"
+#include "Ray.h"
 struct Intersection
 {
 	bool hasIntersection = false;

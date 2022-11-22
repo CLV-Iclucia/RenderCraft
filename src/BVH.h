@@ -1,6 +1,6 @@
 #ifndef RENDERCRAFT_BVH_H
 #define RENDERCRAFT_BVH_H
-#include "Ray.hpp"
+#include "Ray.h"
 #include "Box.h"
 #include "Intersection.h"
 #include <vector>
