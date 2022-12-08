@@ -34,7 +34,7 @@ Real TrowbridgeModel::ShadowMasking(Real cosThetaI, Real cosThetaO, const Vec2& 
     Real cosThetaSqrO = cosThetaO * cosThetaO;
     return SmithMonoShadow(cosThetaSqrI, uv) * SmithMonoShadow(cosThetaSqrO, uv);
 }
-///sample a half-vector on the hemisphere
+///sampleVisiblePoint a half-vector on the hemisphere
 Vec3 TrowbridgeModel::ImportanceSample(Real& pdf_inv, const Vec2& uv) const
 {
     Real Phi = get_random() * PI2;
@@ -63,12 +63,12 @@ Vec3 TrowbridgeModel::ImportanceSample(Real& pdf_inv, const Vec2& uv) const
 
 Vec3 TrowbridgeModel::SampleVNDF(Real& pdf_inv) const
 {
-
+    return {};
 }
 
 Real NormalMapMicrofacet::NormalDistribution(Real, const Vec2& uv) const
 {
-    return 0;
+    return {};
 }
 
 Real NormalMapMicrofacet::SmithMonoShadow(Real, const Vec2 &) const

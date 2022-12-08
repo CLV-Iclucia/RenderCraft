@@ -4,7 +4,6 @@
 #include <stack>
 #include <memory>
 #include <cassert>
-#include "Scene.h"
 
 #define TAG_OPEN 0
 #define TAG_CLOSE 1
@@ -94,22 +93,12 @@ struct DOMNode
 
 std::stack<std::shared_ptr<DOMNode> > stk;
 
-void dfs(const std::shared_ptr<DOMNode>& o, const Scene* scene)
+void dfs(const std::shared_ptr<DOMNode>& o)
 {
     for(auto ptr = o->ch; ptr; ptr = ptr->nxt)
     {
-        dfs(ptr, scene);
+        dfs(ptr);
 
-    }
-}
-
-Scene* parse_scene(const std::shared_ptr<DOMNode>& o)
-{
-    Scene* scene;
-    if(o->tag_name == "scene")
-    {
-        scene = new Scene();
-        dfs(o, scene);
     }
 }
 

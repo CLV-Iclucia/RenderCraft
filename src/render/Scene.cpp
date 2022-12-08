@@ -59,7 +59,7 @@ Spectrum Scene::cast_ray(Ray& ray)
             Real cosThetaI = std::abs(wi[2]);
             ret += throughput * pdf_inv * mat->BxDF(wi, wo, uv) * cosThetaI * dir_rad;//Using Monte Carlo Integration
         }
-        if (get_random() > PRR) break;//sample at a probability of PRR and terminate at a probability of 1-PRR
+        if (get_random() > PRR) break;//sampleVisiblePoint at a probability of PRR and terminate at a probability of 1-PRR
         wi = mat->sample(wo, pdf_inv, uv);
         local_to_world(TBN, wi);//calculate the indirect radiance
         const Real cosThetaI = std::abs(wi[2]);

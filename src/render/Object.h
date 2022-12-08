@@ -4,8 +4,9 @@
 
 #include "Intersection.h"
 #include "Ray.h"
-#include "../XMath/ext/Graphics/MathUtils.h"
+#include "../../XMath/ext/Graphics/MathUtils.h"
 #include "Shape.h"
+#include "../../XMath/ext/Matrix.h"
 
 class Object
 {
@@ -17,7 +18,8 @@ class Object
 		Real getX() const { return p[0]; }
 
 	protected:
-		Vec3 p;
+		Mat3 rotation;
+        Vec3 p;
         Shape* shape = nullptr;
         Material* mat = nullptr;
         TextureGroup* tex = nullptr;

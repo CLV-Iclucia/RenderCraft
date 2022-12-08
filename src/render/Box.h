@@ -1,9 +1,9 @@
 #ifndef RENDERCRAFT_BOX_H
 #define RENDERCRAFT_BOX_H
-#include "Object.h"
+#include "Shape.h"
 #include "Intersection.h"
 #include "Ray.h"
-class Box : Object
+class Box : public Shape
 {
 	public:
 		Intersection intersect(const Ray&) const override;

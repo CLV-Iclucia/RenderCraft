@@ -4,7 +4,7 @@
 
 #ifndef RENDERCRAFT_ENVMAP_H
 #define RENDERCRAFT_ENVMAP_H
-#include "../XMath/ext/Graphics/MathUtils.h"
+#include "../../XMath/ext/Graphics/MathUtils.h"
 
 /**
  * @Note EnvMaps are not considered as objects

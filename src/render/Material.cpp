@@ -74,7 +74,7 @@ Vec3 Translucent::sample(const Vec3& wo, Real& pdf_inv, const Vec2& uv) const
     Real etaSqr = eta * eta;
     Real cosTheta = H.dot(Wo);
     Real Fr = Fresnel(cosTheta, eta);
-    if(get_random() < Fr)//sample reflection light
+    if(get_random() < Fr)//sampleVisiblePoint reflection light
     {
         Vec3 reflect_wi = H * 2.0 * cosTheta - Wo;
         if (reflect_wi[2] < 0.0)
