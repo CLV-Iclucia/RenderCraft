@@ -1,6 +1,6 @@
 #ifndef RENDERCRAFT_TEXTURE_H
 #define RENDERCRAFT_TEXTURE_H
-#include "../XMath/ext/Graphics/MathUtils.h"
+#include "../../XMath/ext/Graphics/MathUtils.h"
 #include "Material.h"
 #include <memory>
 /**
@@ -91,7 +91,6 @@ class ImageTexture : public Texture<T>
 struct TextureGroup
 {
     std::shared_ptr<Texture<Real> > bump_map;
-    ///< However, mat_tex cannot handle various images, so it is helpful to use an optional image texture to provide more pattern
     std::shared_ptr<Texture<Spectrum> > image_tex;
 };
 #endif

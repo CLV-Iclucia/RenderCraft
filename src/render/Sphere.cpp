@@ -1,21 +1,20 @@
 #include "Sphere.h"
 #include <cmath>
-using xmath::EqualZero;
-Intersection Sphere::intersect(const Ray& ray, const Vec3& world_pos) const
+#include <cassert>
+
+void Sphere::intersect(const Ray& ray, Intersection *intsct) const
 {
-    Vec3 dif = ray.orig - world_pos;
+    Vec3 dif = ray.orig;
     Real B = dif.dot(ray.dir);
     Real C = dif.dot(dif) - R * R;
     Real delta = B * B - C;
-    Intersection inter;
-    if (delta < 0.0) return inter;
+    if (delta < 0.0) return ;
     delta = std::sqrt(delta);
-    if (delta < B) return inter;
-    inter.hasIntersection = true;
-    inter.dis = (B + delta) >= 0 ? (delta - B) : -(delta + B);
-    inter.P = ray(inter.dis);
-    inter.normal = (inter.P - world_pos).normalize();
-    return inter;
+    if (delta < B) return ;
+    intsct->hasIntersection = true;
+    intsct->dis = (B + delta) >= 0 ? (delta - B) : -(delta + B);
+    intsct->P = ray(intsct->dis);
+    intsct->normal = (intsct->P).normalized();
 }
 
 Vec3 Sphere::getLocalCoordMin() const
@@ -28,21 +27,18 @@ Vec3 Sphere::getLocalCoordMax() const
     return { R, R, R };
 }
 
-Vec3 Sphere::sampleVisiblePoint(const Vec3& ref, const Vec3& p, Real& pdf) const
+Vec3 Sphere::sampleVisiblePoint(const Vec3& ref, Real *pdf) const
 {
-    Real dis = (ref - p).norm();
+    Real dis = ref.norm();
     if(dis <= R)
     {
-        pdf = PI4_INV;
-        return uniform_sample_sphere() * R + p;
+        *pdf = PI4_INV;
+        return uniform_sample_sphere() * R;
     }
-    Vec3 world_z = (ref - p).normalize();
-    Mat3 to_world = construct_frame(world_z);
     Real local_zMin = 1.0 - R / dis;
     Vec3 ret = uniform_sample_crown(local_zMin);
-    local_to_world(to_world, ret);
-    ret = ret * R + p;
-    pdf = 1.0 / calcVisibleArea(ref, p);
+    ret = ret * R;
+    *pdf = 1.0 / calcVisibleArea(ref);
     return ret;
 }
 
@@ -53,9 +49,9 @@ Vec3 Sphere::sampleVisiblePoint(const Vec3& ref, const Vec3& p, Real& pdf) const
  * @param p the coordinate of the center of the sphere
  * @return the area of the visible region
  */
-Real Sphere::calcVisibleArea(const Vec3& ref, const Vec3& p) const
+Real Sphere::calcVisibleArea(const Vec3& ref) const
 {
-    Real dis = dist(ref, p);
+    Real dis = ref.norm();
     if(dis <= R) return PI4 * R * R;
     if(EqualZero(dis)) return PI4 * R * R;
     return PI4 * acos(R / dis) * R * R;
@@ -63,15 +59,16 @@ Real Sphere::calcVisibleArea(const Vec3& ref, const Vec3& p) const
 
 Real Sphere::calcArea() const
 {
-    return 0;
+    return PI4 * R * R;
 }
 
-Vec3 Sphere::sample(const Vec3 &p) const
+Vec3 Sphere::sample(Real& pdf) const
 {
-    return ext::Vec3();
+    pdf = PI4_INV;
+    return uniform_sample_sphere() * R;
 }
 
-Vec3 Sphere::sample() const
+Vec3 Sphere::sampleVisiblePoint(const Vec3& ref, Real *pdf) const
 {
-    return ext::Vec3();
+    return uniform_sample_crown() * R;
 }

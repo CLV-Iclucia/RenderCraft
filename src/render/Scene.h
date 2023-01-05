@@ -2,7 +2,7 @@
 #define RENDERCRAFT_SCENE_H
 #include <vector>
 #include "Object.h"
-#include "../XMath/ext/Vector.h"
+#include "../../XMath/ext/Vector.h"
 #include "Intersection.h"
 #include "Ray.h"
 #include <algorithm>
@@ -21,7 +21,7 @@ struct Scene
 	const Real PRR = 0.9f;//probability of Russian Roullete
 	void load(const std::vector<Object*>& objList);
 	void load(Object* obj);
-	Intersection intersect(const Ray& ray);
+	void intersect(const Ray& ray, Intersection *intsct);
 	void init();
 	//Regulation: the direction of the ray must be flipped before checking and sampling
 	Spectrum cast_ray(Ray& ray);

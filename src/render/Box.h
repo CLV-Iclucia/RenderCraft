@@ -6,7 +6,7 @@
 class Box : public Shape
 {
 	public:
-		Intersection intersect(const Ray&) const override;
+		Intersection intersect(const Ray& ray, const Vec3& p) const override;
 	private:
 		Vec3 pMin, pMax;
 };

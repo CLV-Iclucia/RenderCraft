@@ -3,12 +3,14 @@
 //
 #ifndef RENDERCRAFT_SHAPE_H
 #define RENDERCRAFT_SHAPE_H
-#include "../XMath/ext/Vector.h"
+#include "../../XMath/ext/Vector.h"
 #include "Ray.h"
 #include "Intersection.h"
 using ext::Vec3;
+using ext::Real;
 /**
- * The shape class, representing the interfaces for a shape
+ * The shape class, representing the interfaces for a shape.
+ * @note all the coordinates in the derived class of Shape are in the local frames.
  */
 class Shape
 {
@@ -23,14 +25,14 @@ class Shape
          * @param p the world coordinates of the position
          * @return the coordinates of the sample point
          */
-        virtual Vec3 sample(const Vec3& p) const = 0;
+        virtual Vec3 sample(Real& pdf) const = 0;
         /**
          * calc the intersection with a given ray
-         * @param ray a ray in the world space
+         * @param ray a ray in the local space
          * @param p the world coordinates of the position
          * @return an Intersection class recording the info of this intersection
          */
-        virtual Intersection intersect(const Ray& ray, const Vec3& p) const = 0;
+        virtual void intersect(const Ray& ray, Intersection *intsct) const = 0;
         virtual Vec3 getLocalCoordMin() const = 0;
 		virtual Vec3 getLocalCoordMax() const = 0;
         /**
@@ -44,8 +46,8 @@ class Shape
          * @param p
          * @return
          */
-        virtual Real calcVisibleArea(const Vec3& ref, const Vec3& p) const = 0;
-        virtual Vec3 sampleVisiblePoint(const Vec3&, const Vec3&, Real&) const = 0;
+        virtual Real calcVisibleArea(const Vec3& ref) const = 0;
+        virtual Vec3 sampleVisiblePoint(const Vec3& ref, Real *pdf) const = 0;
         virtual ~Shape() = default;
 };
 

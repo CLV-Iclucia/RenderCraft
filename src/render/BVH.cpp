@@ -1,3 +1,4 @@
+#include <cassert>
 #include "BVH.h"
 bool BoundingVolume::intersect(const Ray& ray) const
 {
@@ -15,26 +16,22 @@ bool BoundingVolume::intersect(const Ray& ray) const
     if (t_in > t_out || t_out < 0.0) return false;
     else return true;
 }
-BVH::BVH(const std::vector<Object*>& ObjList)
-{
-    rt->build(rt, ObjList, 0, ObjList.size() - 1);
-}
-void Node::build(Node*& o, const std::vector<Object*>& ObjList, int l, int r)
+void build(Node*& o, const std::vector<Object*>& ObjList, int l, int r)
 {
     o = new Node;
     Real MinX = 1e9, MaxX = -1e9;
     Vec3 pMin(1e9), pMax(-1e9);
-    for (unsigned int i = l; i <= r; i++)
+    for (int i = l; i <= r; i++)
     {
         auto obj = ObjList[i];
         MinX = std::min(obj->getX(), obj->getX());
         MaxX = std::max(obj->getX(), obj->getX());
         Vec3 _pMin = obj->getCoordMin();
         Vec3 _pMax = obj->getCoordMax();
-        for(int i = 0; i < 3; i++)
-            pMin[i] = std::min(pMin[i], _pMin[i]);
-        for(int i = 0; i < 3; i++)
-            pMax[i] = std::max(pMin[i], _pMin[i]);
+        for(int j = 0; j < 3; j++)
+            pMin[j] = std::min(pMin[j], _pMin[j]);
+        for(int j = 0; j < 3; j++)
+            pMax[j] = std::max(pMax[j], _pMax[j]);
     }
     o->B.pMin = pMin;
     o->B.pMax = pMax;
@@ -54,11 +51,16 @@ void Node::build(Node*& o, const std::vector<Object*>& ObjList, int l, int r)
     build(o->lch, ObjList, l, L);
     if(L < r)build(o->rch, ObjList, L + 1, r);
 }
-Intersection BVH::intersect(const Node* o, const Ray& ray)
+BVH::BVH(const std::vector<Object*>& ObjList)
+{
+    assert(!ObjList.empty());
+    build(rt, ObjList, 0, ObjList.size() - 1);
+}
+static Intersection intersect(const Node* o, const Ray& ray)
 {
     if (o->lch == nullptr && o->rch == nullptr)
         return o->B.intersect(ray) ? o->obj->intersect(ray) : Intersection();
-    else if (o->rch == nullptr) 
+    else if (o->rch == nullptr)
         return o->lch->B.intersect(ray) ? intersect(o->lch, ray) : Intersection();
     else if (o->lch == nullptr)
         return o->rch->B.intersect(ray) ? intersect(o->rch, ray) : Intersection();
@@ -78,4 +80,8 @@ Intersection BVH::intersect(const Node* o, const Ray& ray)
             else return interL.dis < interR.dis ? interL : interR;
         }
     }
+}
+Intersection BVH::intersect(const Ray& ray) const
+{
+    return ::intersect(rt, ray);
 }

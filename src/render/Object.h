@@ -13,12 +13,13 @@ class Object
 	public:
 		Object() = default;
 		explicit Object(Vec3 _p, Material* _mat) : p(std::move(_p)), mat(_mat) {}
-		Intersection intersect(const Ray&) const;
+		void intersect(const Ray&, Intersection *intsct) const;
 		virtual ~Object() = default;
+        Vec3 getCoordMin();
+        Vec3 getCoordMax();
 		Real getX() const { return p[0]; }
 
 	protected:
-		Mat3 rotation;
         Vec3 p;
         Shape* shape = nullptr;
         Material* mat = nullptr;

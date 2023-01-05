@@ -4,6 +4,7 @@
 #include "Box.h"
 #include "Intersection.h"
 #include <vector>
+#include "Object.h"
 struct BoundingVolume
 {
 	public:
@@ -15,13 +16,12 @@ struct Node
 	BoundingVolume B;
 	Node* lch = nullptr, *rch = nullptr;
 	Object* obj = nullptr;
-	void build(Node*&, const std::vector<Object*>&, int, int);
 };
 class BVH
 {
 	public:
-		BVH(const std::vector<Object*>&);
-		Intersection intersect(const Node*, const Ray&);
+		explicit BVH(const std::vector<Object*>&);
+		Intersection intersect(const Ray&) const;
 	private:
 		Node* rt;
 };

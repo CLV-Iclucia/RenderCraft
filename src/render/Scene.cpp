@@ -11,16 +11,15 @@ void Scene::load(Object* obj)
 {
     ObjList.push_back(obj);
 }
-Intersection Scene::intersect(const Ray& ray)
+void Scene::intersect(const Ray& ray, Intersection *intsct)
 {
-    Intersection ret;
     for (auto obj : ObjList)
     {
-        Intersection inter = obj->intersect(ray);
-        if (inter.hasIntersection && (!ret.hasIntersection || ret.dis >= inter.dis))
-            ret = inter;
+        Intersection inter;
+        obj->intersect(ray, &inter);
+        if (inter.hasIntersection && (!intsct->hasIntersection || intsct->dis >= inter.dis))
+            intsct = &inter;
     }
-    return ret;
 }
 void Scene::init()
 {

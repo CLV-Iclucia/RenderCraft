@@ -4,6 +4,7 @@
 #include <stack>
 #include <memory>
 #include <cassert>
+#include "../render/Scene.h"
 
 #define TAG_OPEN 0
 #define TAG_CLOSE 1
@@ -12,9 +13,8 @@
 #define INVALID_TAG_NAME_NOT_START_WITH_ALPHA_OR_UNDERLINE 0
 #define INVALID_TAG_NAME_START_WITH_XML 1
 #define VALID_TAG_NAME 2
-#define THROW_PARSE_ERROR std::cerr << "Error: Cannot parse scene description file. Please check the file format." << std::endl;\
-                            return\
-                            nullptr
+#define THROW_PARSE_ERROR {std::cerr << "Error: Cannot parse scene description file. Please check the file format." << std::endl;\
+                            return nullptr;}
 
 int read_tag(std::fstream& fin, std::string& tag)
 {
@@ -112,7 +112,7 @@ Scene* parse_xml(const std::string &path)
     {
         if(!read_tag(fin, tag)) break;
         int n = tag.length();
-        if(tag[0] != '<' || tag[n - 1] != '>') { THROW_PARSE_ERROR; }
+        if(tag[0] != '<' || tag[n - 1] != '>') THROW_PARSE_ERROR;
         int type = classify_tag(tag);
         std::string tag_name;
         int error_code = get_tag_name(tag, tag_name, type);
@@ -145,7 +145,7 @@ Scene* parse_xml(const std::string &path)
             }
         }
     }
-    if(stk.size() != 1) { THROW_PARSE_ERROR; }
+    if(stk.size() != 1) THROW_PARSE_ERROR;
     return parse_scene(rt);
 }
 

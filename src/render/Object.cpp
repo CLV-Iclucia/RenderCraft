@@ -3,10 +3,19 @@
 //
 #include "Object.h"
 
-Intersection Object::intersect(const Ray &ray) const
+Intersection Object::intersect(const Ray &ray, Intersection *intsct) const
 {
-    Intersection inter = shape->intersect(ray, p);
-    inter.mat = mat;
-    return inter;
+    shape->intersect(ray, intsct);
+    intsct->mat = mat;
+}
+
+Vec3 Object::getCoordMax()
+{
+    return p + shape->getLocalCoordMax();
+}
+
+Vec3 Object::getCoordMin()
+{
+    return p + shape->getLocalCoordMin();
 }
 
