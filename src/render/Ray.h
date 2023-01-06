@@ -1,6 +1,6 @@
 #ifndef RENDERCRAFT_RAY_H
 #define RENDERCRAFT_RAY_H
-#include "../XMath/ext/Graphics/MathUtils.h"
+#include "../../XMath/ext/Graphics/MathUtils.h"
 struct Ray
 {
     Vec3 orig, dir;

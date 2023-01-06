@@ -1,6 +1,4 @@
 #include "Microfacet.h"
-#include "../XMath/ext/Graphics/MathUtils.h"
-#include "../XMath/ext/Matrix.h"
 //Real BeckmannModel::NormalDistribution(const Vec3&) const
 //{
 //    return 0.0f;
@@ -35,7 +33,7 @@ Real TrowbridgeModel::ShadowMasking(Real cosThetaI, Real cosThetaO, const Vec2& 
     return SmithMonoShadow(cosThetaSqrI, uv) * SmithMonoShadow(cosThetaSqrO, uv);
 }
 ///sampleVisiblePoint a half-vector on the hemisphere
-Vec3 TrowbridgeModel::ImportanceSample(Real& pdf_inv, const Vec2& uv) const
+Vec3 TrowbridgeModel::ImportanceSample(Real *pdf_inv, const Vec2& uv) const
 {
     Real Phi = get_random() * PI2;
     Real tmp = get_random();
@@ -50,7 +48,7 @@ Vec3 TrowbridgeModel::ImportanceSample(Real& pdf_inv, const Vec2& uv) const
         Real sinTheta = std::sqrt(1.0 - cosThetaSqr);
         tmp = (alphaSqr - 1) * cosThetaSqr + 1.0;
         tmp *= tmp;
-        pdf_inv = tmp / cosTheta * PI / alphaSqr;
+        *pdf_inv = tmp / cosTheta * PI / alphaSqr;
         Vec3 H({ sinTheta * std::cos(Phi), sinTheta * std::sin(Phi), cosTheta });
         return H;
     }
@@ -61,7 +59,7 @@ Vec3 TrowbridgeModel::ImportanceSample(Real& pdf_inv, const Vec2& uv) const
     }
 }
 
-Vec3 TrowbridgeModel::SampleVNDF(Real& pdf_inv) const
+Vec3 TrowbridgeModel::SampleVNDF(Real* pdf_inv) const
 {
     return {};
 }

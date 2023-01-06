@@ -1,6 +1,6 @@
 #ifndef RENDERCRAFT_MICROFACET_H
 #define RENDERCRAFT_MICROFACET_H
-#include "../XMath/ext/Graphics/MathUtils.h"
+#include "../../XMath/ext/Graphics/MathUtils.h"
 #include "Texture.h"
 struct Microfacet
 {
@@ -8,7 +8,7 @@ struct Microfacet
 		virtual Real NormalDistribution(Real, const Vec2& uv) const = 0;
 		virtual Real SmithMonoShadow(Real, const Vec2&) const = 0;
 		virtual Real ShadowMasking(Real, Real, const Vec2&) const = 0;
-		virtual Vec3 ImportanceSample(Real&, const Vec2&) const = 0;//(x, y, z, pdf_inv)
+		virtual Vec3 ImportanceSample(Real*, const Vec2&) const = 0;//(x, y, z, pdf_inv)
 };
 //struct BeckmannModel : public Microfacet
 //{
@@ -22,10 +22,10 @@ class TrowbridgeModel : public Microfacet
 		Real NormalDistribution(Real, const Vec2&) const override;
 		Real SmithMonoShadow(Real, const Vec2&) const override;
 		Real ShadowMasking(Real, Real, const Vec2&) const override;
-		Vec3 ImportanceSample(Real&, const Vec2&) const override;
+		Vec3 ImportanceSample(Real*, const Vec2&) const override;
 	private:
 		std::shared_ptr<Texture<Real> > alpha;
-        Vec3 SampleVNDF(Real &pdf_inv) const;
+        Vec3 SampleVNDF(Real *pdf_inv) const;
 };
 
 class NormalMapMicrofacet : public Microfacet

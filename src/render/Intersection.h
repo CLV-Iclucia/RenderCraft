@@ -2,7 +2,7 @@
 #define RENDERCRAFT_INTERSECTION_H
 #include <utility>
 
-#include "../XMath/ext/Graphics/MathUtils.h"
+#include "../../XMath/ext/Graphics/MathUtils.h"
 #include "Material.h"
 #include "Texture.h"
 #include "Ray.h"

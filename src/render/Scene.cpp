@@ -18,7 +18,7 @@ void Scene::intersect(const Ray& ray, Intersection *intsct)
         Intersection inter;
         obj->intersect(ray, &inter);
         if (inter.hasIntersection && (!intsct->hasIntersection || intsct->dis >= inter.dis))
-            intsct = &inter;
+            *intsct = inter;
     }
 }
 void Scene::init()
@@ -35,24 +35,26 @@ Spectrum Scene::cast_ray(Ray& ray)
     Vec3& wo = ray.dir;
     for(int bounce = 0;; bounce++)
     {
-        Intersection inter = intersect(ray);
-        if (!inter.hasIntersection)
+        Intersection intsct;
+        intersect(ray, &intsct);
+        if (!intsct.hasIntersection)
         {
             if(bounce) break;
             else return envMap->evalEmission(wo);
         }
-        Material* mat = inter.mat;
-        Mat3 TBN = construct_frame(inter.normal);
+        Material* mat = intsct.mat;
+        Mat3 TBN = construct_frame(intsct.normal);
         wo = -wo;
         world_to_local(TBN, wo);
-        TextureGroup* tex = inter.tex;
-        Vec2& uv = inter.uv;
-        const Vec3& P = inter.P;
+        TextureGroup* tex = intsct.tex;
+        Vec2& uv = intsct.uv;
+        const Vec3& P = intsct.P;
         Real pdf_inv;
-        Vec3 wi = mat->sample(wo, pdf_inv, uv);
+        Vec3 wi = mat->sample(wo, &pdf_inv, uv);
         local_to_world(TBN, wi);
-        Intersection dir_inter = intersect(Ray(P, wi));
-        if (!dir_inter.hasIntersection)//calc the direct radiance from the environment/sky
+        Intersection dir_intsct;
+        intersect(Ray(P, wi), &dir_intsct);
+        if (!dir_intsct.hasIntersection)//calc the direct radiance from the environment/sky
         {
             Spectrum dir_rad = envMap->evalEmission(wi);
             Real cosThetaI = std::abs(wi[2]);

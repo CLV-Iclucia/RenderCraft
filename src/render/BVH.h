@@ -21,7 +21,7 @@ class BVH
 {
 	public:
 		explicit BVH(const std::vector<Object*>&);
-		Intersection intersect(const Ray&) const;
+		void intersect(const Ray&, Intersection *intsct) const;
 	private:
 		Node* rt;
 };

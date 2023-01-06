@@ -11,6 +11,7 @@ void Sphere::intersect(const Ray& ray, Intersection *intsct) const
     if (delta < 0.0) return ;
     delta = std::sqrt(delta);
     if (delta < B) return ;
+    intsct->uv = {};
     intsct->hasIntersection = true;
     intsct->dis = (B + delta) >= 0 ? (delta - B) : -(delta + B);
     intsct->P = ray(intsct->dis);
@@ -36,8 +37,7 @@ Vec3 Sphere::sampleVisiblePoint(const Vec3& ref, Real *pdf) const
         return uniform_sample_sphere() * R;
     }
     Real local_zMin = 1.0 - R / dis;
-    Vec3 ret = uniform_sample_crown(local_zMin);
-    ret = ret * R;
+    Vec3 ret = uniform_sample_crown(local_zMin) * R;
     *pdf = 1.0 / calcVisibleArea(ref);
     return ret;
 }
@@ -66,9 +66,4 @@ Vec3 Sphere::sample(Real& pdf) const
 {
     pdf = PI4_INV;
     return uniform_sample_sphere() * R;
-}
-
-Vec3 Sphere::sampleVisiblePoint(const Vec3& ref, Real *pdf) const
-{
-    return uniform_sample_crown() * R;
 }

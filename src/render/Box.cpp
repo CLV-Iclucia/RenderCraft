@@ -1,7 +1,7 @@
 #include "Box.h"
 #include <algorithm>
 
-Intersection Box::intersect(const Ray &ray, const Vec3 &p) const
+void Box::intersect(const Ray &ray, Intersection *intsct) const
 {
-    return Intersection();
+
 }

@@ -7,20 +7,23 @@
 #include "../../XMath/ext/Graphics/MathUtils.h"
 #include "Shape.h"
 #include "../../XMath/ext/Matrix.h"
+#include "Transform.h"
 
 class Object
 {
 	public:
 		Object() = default;
-		explicit Object(Vec3 _p, Material* _mat) : p(std::move(_p)), mat(_mat) {}
 		void intersect(const Ray&, Intersection *intsct) const;
+        Object(const Transform& local2World, Shape* _shape, Material* _mat, TextureGroup* _tex) :
+            Local2World(local2World), World2Local(local2World.inv()), shape(_shape), mat(_mat), tex(_tex) {}
 		virtual ~Object() = default;
         Vec3 getCoordMin();
         Vec3 getCoordMax();
-		Real getX() const { return p[0]; }
+		Real getX() const { return Local2World.translate[0]; }
 
 	protected:
-        Vec3 p;
+        Transform Local2World;
+        Transform World2Local;
         Shape* shape = nullptr;
         Material* mat = nullptr;
         TextureGroup* tex = nullptr;

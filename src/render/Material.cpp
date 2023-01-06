@@ -1,6 +1,6 @@
 ﻿#include "Material.h"
-#include "../XMath/ext/Graphics/MathUtils.h"
-#include "../XMath/ext/Matrix.h"
+#include "../../XMath/ext/Graphics/MathUtils.h"
+#include "../../XMath/ext/Matrix.h"
 #include <cmath>
 /*Both wo and wi leaves the point*/
 Vec3 Metal::Fresnel(Real cosTheta) const
@@ -39,24 +39,24 @@ Vec3 Metal::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
         / cosThetaO * surface->ShadowMasking(cosThetaI, cosThetaO, uv) / cosThetaI;
     return ret;
 }
-Vec3 Metal::sample(const Vec3& wo, Real& pdf_inv, const Vec2& uv) const
+Vec3 Metal::sample(const Vec3& wo, Real* pdf_inv, const Vec2& uv) const
 {
     Vec3 H = surface->ImportanceSample(pdf_inv, uv);
     Real cosTheta = H.dot(wo);
     Vec3 ret = H * 2.0 * cosTheta - wo;
     if(cosTheta < 0.0 || ret[2] < 0.0)
     {
-        pdf_inv = 0.0;
+        *pdf_inv = 0.0;
         return {};
     }
-    pdf_inv *= 4.0 * cosTheta;
+    *pdf_inv *= 4.0 * cosTheta;
     return ret;
 }
-Vec3 Lambertian::sample(const Vec3& wo, Real& pdf_inv, const Vec2& uv) const
+Vec3 Lambertian::sample(const Vec3& wo, Real* pdf_inv, const Vec2& uv) const
 {
     if(wo[2] < 0.0) return {};
     Vec3 ret = cos_weighted_sample_hemisphere();
-    pdf_inv = PI / std::max(ret[2], EPS);
+    *pdf_inv = PI / std::max(ret[2], EPS);
     return ret;
 }
 Vec3 Lambertian::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
@@ -64,46 +64,7 @@ Vec3 Lambertian::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
     if (wo[2] < 0.0) return {};
     else return albedo->eval(uv) * PI_INV;
 }
-Vec3 Translucent::sample(const Vec3& wo, Real& pdf_inv, const Vec2& uv) const
-{
-    bool inside = wo[2] < 0.0;
-    Real eta = inside ? etaB / etaA : etaA / etaB; //eta = etaI / etaO
-    Vec3 Wo = wo; // we flip the wo, it is just like we flip the z-axis
-    if(inside) Wo[2] = -Wo[2];
-    Vec3 H = surface->ImportanceSample(pdf_inv, uv);
-    Real etaSqr = eta * eta;
-    Real cosTheta = H.dot(Wo);
-    Real Fr = Fresnel(cosTheta, eta);
-    if(get_random() < Fr)//sampleVisiblePoint reflection light
-    {
-        Vec3 reflect_wi = H * 2.0 * cosTheta - Wo;
-        if (reflect_wi[2] < 0.0)
-        {
-            pdf_inv = 0.0;
-            return {};
-        }
-        pdf_inv *= 4.0 * cosTheta;
-        return reflect_wi;
-    }
-    else
-    {
-        Vec3 refract_wi = refract(Wo, H, eta).normalize();
-        if (refract_wi[2] > 0.0)//in this case it is only possible to generate a reflection light
-        {
-            pdf_inv = 0.0;
-            return {};
-        }
-        else
-        {
-            Real cosThetaI = H.dot(refract_wi);
-            Real tmp = (cosTheta + eta * cosThetaI);
-            pdf_inv *= 2.0 * tmp * tmp / (etaSqr * std::abs(cosThetaI));
-            if(inside) refract_wi[2] = -refract_wi[2];
-            return refract_wi;
-        }
-    }
-}
-Real Translucent::Fresnel(Real cosThetaO, Real eta)
+static Real Fresnel(Real cosThetaO, Real eta)
 {
     try
     {
@@ -126,6 +87,46 @@ Real Translucent::Fresnel(Real cosThetaO, Real eta)
         return 0.0;
     }
 }
+Vec3 Translucent::sample(const Vec3& wo, Real* pdf_inv, const Vec2& uv) const
+{
+    bool inside = wo[2] < 0.0;
+    Real eta = inside ? etaB / etaA : etaA / etaB; //eta = etaI / etaO
+    Vec3 Wo = wo; // we flip the wo, it is just like we flip the z-axis
+    if(inside) Wo[2] = -Wo[2];
+    Vec3 H = surface->ImportanceSample(pdf_inv, uv);
+    Real etaSqr = eta * eta;
+    Real cosTheta = H.dot(Wo);
+    Real Fr = Fresnel(cosTheta, eta);
+    if(get_random() < Fr)//sampleVisiblePoint reflection light
+    {
+        Vec3 reflect_wi = H * 2.0 * cosTheta - Wo;
+        if (reflect_wi[2] < 0.0)
+        {
+            *pdf_inv = 0.0;
+            return {};
+        }
+        *pdf_inv *= 4.0 * cosTheta;
+        return reflect_wi;
+    }
+    else
+    {
+        Vec3 refract_wi = refract(Wo, H, eta).normalize();
+        if (refract_wi[2] > 0.0)//in this case it is only possible to generate a reflection light
+        {
+            *pdf_inv = 0.0;
+            return {};
+        }
+        else
+        {
+            Real cosThetaI = H.dot(refract_wi);
+            Real tmp = (cosTheta + eta * cosThetaI);
+            *pdf_inv *= 2.0 * tmp * tmp / (etaSqr * std::abs(cosThetaI));
+            if(inside) refract_wi[2] = -refract_wi[2];
+            return refract_wi;
+        }
+    }
+}
+
 Vec3 Translucent::BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const
 {
     bool inside = wo[2] < 0.0;
