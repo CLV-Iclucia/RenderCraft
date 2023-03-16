@@ -11,12 +11,11 @@ class Sphere : public Shape
 {
 	public:
 		explicit Sphere(Real r) : R(r) {}
-        bool isConvex() const override { return true; }
         void intersect(const Ray&, Intersection *intsct) const override;
 		Vec3 getLocalCoordMin() const override;
 		Vec3 getLocalCoordMax() const override;
         Real calcArea() const override;
-        Vec3 sample(Real& pdf) const override;
+        Vec3 sample(Real *pdf) const override;
         Real calcVisibleArea(const Vec3& ref) const override;
         Vec3 sampleVisiblePoint(const Vec3& ref, Real *pdf) const override;
 	private:

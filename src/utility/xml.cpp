@@ -1,3 +1,9 @@
+/**
+ * @note this file is discarded, because there is no need to implement a xml parser myself
+ *      I will use external dependencies instead.
+ */
+
+
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -79,9 +85,10 @@ struct DOMNode
     std::string tag_name;
     std::shared_ptr<DOMNode> ch, nxt;
     DOMNode(std::string _tag, std::string _tag_name) : tag(std::move(_tag)), tag_name(std::move(_tag_name)) {}
-    explicit DOMNode(std::string _tag) : tag(std::move(_tag))
+    explicit DOMNode(std::string _tag)
     {
         get_tag_name(_tag, tag_name, classify_tag(_tag));
+        tag = std::move(_tag);
     }
     void add_child(const std::shared_ptr<DOMNode>& nd)
     {
@@ -100,6 +107,11 @@ void dfs(const std::shared_ptr<DOMNode>& o)
         dfs(ptr);
 
     }
+}
+
+Scene* parse_scene(const std::shared_ptr<DOMNode>& rt)
+{
+    return nullptr;
 }
 
 Scene* parse_xml(const std::string &path)
@@ -147,9 +159,4 @@ Scene* parse_xml(const std::string &path)
     }
     if(stk.size() != 1) THROW_PARSE_ERROR;
     return parse_scene(rt);
-}
-
-int main()
-{
-    parse_xml("./disney_metal.xml");
 }

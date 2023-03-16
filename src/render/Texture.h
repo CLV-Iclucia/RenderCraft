@@ -1,7 +1,6 @@
 #ifndef RENDERCRAFT_TEXTURE_H
 #define RENDERCRAFT_TEXTURE_H
 #include "../../XMath/ext/Graphics/MathUtils.h"
-#include "Material.h"
 #include <memory>
 /**
  * \brief All textures in RenderCraft are considered as "distribution".
@@ -22,8 +21,8 @@ template<typename T>
 class ConstantTexture : public Texture<T>
 {
     public:
-        ConstantTexture(const T& _tex) : tex(_tex) {}
-        ConstantTexture(T&& _tex) : tex(std::move(_tex)) {}
+        explicit ConstantTexture(const T& _tex) : tex(_tex) {}
+        explicit ConstantTexture(T&& _tex) : tex(std::move(_tex)) {}
         T eval(const Vec2&) const override { return tex; }
     private:
         T tex;

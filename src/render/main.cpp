@@ -6,15 +6,11 @@
 #include "Ray.h"
 #include "Sphere.h"
 #include "Scene.h"
-#include "Materials.h"
-const int spp = 256;
-const int nx = 1024, ny = 1024;
 Scene scene;
 int main()
 {
     int ScrWid = 4, ScrHeight = 4, ScrZ = -1;
     std::fstream fout("./output.ppm", std::ios_base::out);
-    scene.load(new Object({0.1, 0.5, -0.2}, 0.3, Gold));
     fout << "P3" << std::endl << nx << " " << ny << std::endl << 255 <<std::endl;
     for(int j = ny-1; j >= 0; j--)
     {
@@ -35,8 +31,7 @@ int main()
             if (color[1] >= 1.0)color[1] = 1.0;
             if (color[2] >= 1.0)color[2] = 1.0;
             color[0] = std::sqrt(color[0]);
-            color[1] = std::sqrt(color[1]);
-            color[2] = std::sqrt(color[2]);
+            color[1] = std::sqrt(
             fout << int(color[0] * 255.99) << " " << int(color[1] * 255.99) << " " << int(color[2] * 255.99) << std::endl;
         }
         fflush(stdout);

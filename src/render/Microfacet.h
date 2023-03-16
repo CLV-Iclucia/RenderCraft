@@ -1,5 +1,7 @@
 #ifndef RENDERCRAFT_MICROFACET_H
 #define RENDERCRAFT_MICROFACET_H
+#include <utility>
+
 #include "../../XMath/ext/Graphics/MathUtils.h"
 #include "Texture.h"
 struct Microfacet
@@ -18,7 +20,7 @@ struct Microfacet
 class TrowbridgeModel : public Microfacet
 {
 	public:
-        explicit TrowbridgeModel(const std::shared_ptr<Texture<Real> >& _alpha) : alpha(_alpha) {}
+        explicit TrowbridgeModel(std::shared_ptr<Texture<Real> >  _alpha) : alpha(std::move(_alpha)) {}
 		Real NormalDistribution(Real, const Vec2&) const override;
 		Real SmithMonoShadow(Real, const Vec2&) const override;
 		Real ShadowMasking(Real, Real, const Vec2&) const override;

@@ -9,23 +9,17 @@
 using ext::Vec3;
 using ext::Real;
 /**
- * The shape class, representing the interfaces for a shape.
- * @note all the coordinates in the derived class of Shape are in the local frames.
+ * Basic Shape interfaces.
  */
 class Shape
 {
     public:
         /**
-         * return the convexity of the shape, this decides whether methods for sampling visible methods can be adopted
-         * @return return true if and only if the shape is convex
-         */
-        virtual bool isConvex() const = 0;
-        /**
          * sample a point on the surface of the shape given the position of the shape
          * @param p the world coordinates of the position
          * @return the coordinates of the sample point
          */
-        virtual Vec3 sample(Real& pdf) const = 0;
+        virtual Vec3 sample(Real *pdf) const = 0;
         /**
          * calc the intersection with a given ray
          * @param ray a ray in the local space
@@ -51,5 +45,9 @@ class Shape
         virtual ~Shape() = default;
 };
 
+inline bool shapePtrCmp(Shape* A, Shape* B)
+{
+    return A->getX() < B->getX();
+}
 
 #endif //RENDERCRAFT_SHAPE_H

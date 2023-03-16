@@ -1,7 +1,7 @@
 #ifndef RENDERCRAFT_MATERIAL_H
 #define RENDERCRAFT_MATERIAL_H
-#include "../../XMath/ext/Graphics/MathUtils.h"
 #include "Microfacet.h"
+#include <memory>
 #include <utility>
 struct Material
 {
@@ -11,9 +11,8 @@ struct Material
 class Lambertian : public Material //Lambertian diffuse
 {
     public:
-        Lambertian(const std::shared_ptr<Texture<Vec3> >& _albedo) : albedo(_albedo){}
-        explicit Lambertian(const Spectrum& col) :
-            albedo(std::make_shared<ConstantTexture<Spectrum> >(col)) {}
+        explicit Lambertian(std::shared_ptr<Texture<Spectrum> >  _albedo) : albedo(std::move(_albedo)){}
+        explicit Lambertian(const Spectrum& col) : albedo(std::make_shared<ConstantTexture<Spectrum> >(col)) {}
         Vec3 sample(const Vec3&, Real*, const Vec2&) const override;
         Vec3 BxDF(const Vec3&, const Vec3&, const Vec2&) const override;
     private:
@@ -36,10 +35,10 @@ class Metal : public Material//using Torrance-Sparrow Model
 class Translucent : public Material //translucent dielectrics
 {
     public:
-        Translucent(Real _eta, Microfacet* surf, const std::shared_ptr<Texture<Vec3> >& _color) : etaA(_eta),
-            surface(surf), color(_color) {}
+        Translucent(Real _eta, Microfacet* surf, std::shared_ptr<Texture<Vec3> >  _color) : etaA(_eta),
+            surface(surf), color(std::move(_color)) {}
         Translucent(Real _eta, Microfacet* surf) : etaA(_eta), surface(surf),
-            color(std::make_shared<ConstantTexture<Vec3> >({1.0, 1.0, 1.0})) {}
+            color(std::make_shared<ConstantTexture<Vec3> >(Vec3(1.0))) {}
         Vec3 sample(const Vec3&, Real*, const Vec2&) const override;
         Vec3 BxDF(const Vec3& wi, const Vec3& wo, const Vec2& uv) const override;
     private:

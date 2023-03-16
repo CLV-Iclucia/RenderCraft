@@ -62,8 +62,8 @@ Real Sphere::calcArea() const
     return PI4 * R * R;
 }
 
-Vec3 Sphere::sample(Real& pdf) const
+Vec3 Sphere::sample(Real *pdf) const
 {
-    pdf = PI4_INV;
+    *pdf = PI4_INV;
     return uniform_sample_sphere() * R;
 }
