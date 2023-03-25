@@ -14,5 +14,7 @@ else()
     message(FATAL_ERROR "MX3d not found. Use \"git submodule --init --update\" to clone the missing submodules.")
 endif()
 
+add_subdirectory(${RENDERCRAFT_EXTERNAL}/pugixml)
+
 file(GLOB RENDERCRAFT_SRC ${PROJECT_SOURCE_DIR}/src/render/* ${PROJECT_SOURCE_DIR}/src/utility/*)
 add_executable(RenderCraft ${RENDERCRAFT_SRC} ${XMATH_CORE} ${XMATH_EXT} src/render/Camera.cpp src/render/Camera.h src/render/Surface.cpp src/render/Surface.h)

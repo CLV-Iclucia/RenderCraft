@@ -1,6 +1,0 @@
-[submodule "external/MX3d"]
-	path = external/MX3d
-	url = git@github.com:CreeperLordVader-Iclucia-Ashina/MX3d.git
-[submodule "external/pugixml"]
-	path = external/pugixml
-	url = git@github.com:zeux/pugixml.git
