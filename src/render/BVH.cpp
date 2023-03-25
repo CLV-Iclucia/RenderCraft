@@ -16,14 +16,14 @@ bool BoundingVolume::intersect(const Ray& ray) const
     if (t_in > t_out || t_out < 0.0) return false;
     else return true;
 }
-void build(Node*& o, const std::vector<Object*>& ObjList, int l, int r)
+void build(Node*& o, const std::vector<std::shared_ptr<Shape>>& shapes, int l, int r)
 {
     o = new Node;
     Real MinX = 1e9, MaxX = -1e9;
     Vec3 pMin(1e9), pMax(-1e9);
     for (int i = l; i <= r; i++)
     {
-        auto obj = ObjList[i];
+        auto obj = shapes[i];
         MinX = std::min(obj->getX(), obj->getX());
         MaxX = std::max(obj->getX(), obj->getX());
         Vec3 _pMin = obj->getCoordMin();
@@ -37,7 +37,7 @@ void build(Node*& o, const std::vector<Object*>& ObjList, int l, int r)
     o->B.pMax = pMax;
     if (l == r)
     {
-        o->obj = ObjList[l];
+        o->obj = shapes[l];
         return;
     }
     Real MidX = (MinX + MaxX) * 0.5;
@@ -45,16 +45,16 @@ void build(Node*& o, const std::vector<Object*>& ObjList, int l, int r)
     while (L < R)
     {
         int mid = (L + R) >> 1;
-        if (ObjList[mid]->getX() < MidX) L = mid + 1;
+        if (shapes[mid]->getX() < MidX) L = mid + 1;
         else R = mid;
     }
-    build(o->lch, ObjList, l, L);
-    if(L < r)build(o->rch, ObjList, L + 1, r);
+    build(o->lch, shapes, l, L);
+    if(L < r)build(o->rch, shapes, L + 1, r);
 }
-BVH::BVH(const std::vector<Object*>& ObjList)
+BVH::BVH(const std::vector<std::shared_ptr<Shape>>& shapes)
 {
-    assert(!ObjList.empty());
-    build(rt, ObjList, 0, ObjList.size() - 1);
+    assert(!shapes.empty());
+    build(rt, shapes, 0, shapes.size() - 1);
 }
 static void intersect(const Node* o, const Ray& ray, Intersection *intsct)
 {

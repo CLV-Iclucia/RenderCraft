@@ -4,15 +4,15 @@
 
 #ifndef RENDERCRAFT_ENVMAP_H
 #define RENDERCRAFT_ENVMAP_H
+
+
 #include "../../XMath/ext/Graphics/MathUtils.h"
+#include "types.h"
 
-/**
- * @Note EnvMaps are not considered as objects
- */
-
-struct EnvMap
+class EnvMap
 {
-    virtual Spectrum evalEmission(const Vec3&) const = 0;
+    public:
+        virtual Spectrum evalEmission(const Vec3&) const = 0;
 };
 
 class Sky : public EnvMap

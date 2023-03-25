@@ -15,12 +15,12 @@ struct Node
 {
 	BoundingVolume B;
 	Node* lch = nullptr, *rch = nullptr;
-	Object* obj = nullptr;
+    Surface* obj;
 };
 class BVH
 {
 	public:
-		explicit BVH(const std::vector<Object*>&);
+		explicit BVH(const std::vector<Surface*>&);
 		void intersect(const Ray&, Intersection *intsct) const;
 	private:
 		Node* rt;

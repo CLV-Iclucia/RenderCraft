@@ -16,21 +16,19 @@
 class Integrator
 {
     public:
-        virtual Spectrum render(uint x, uint y) const = 0;
+        virtual Spectrum L(uint x, uint y) const = 0;
 };
 
 class PathTracer : public Integrator
 {
-    private:
-        std::shared_ptr<Filter> filter;
-        Scene scene;
-        RenderOptions opt;
-        Camera camera;
-        // Regulation: the direction of the ray must be flipped before checking and sampling
-        Spectrum castRay(const Ray& ray) const;
     public:
-        Spectrum render(uint x, uint y) const override;
+        Spectrum L(const Ray& ray) const override;
 };
 
+class VolumePathTracer : public Integrator
+{
+    public:
+        Spectrum L(const Ray& ray) const override;
+};
 
 #endif //RENDERCRAFT_INTEGRATOR_H

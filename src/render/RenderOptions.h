@@ -10,8 +10,9 @@ struct RenderOptions
 {
     const uint spp = 256;
     const Real PRR = 0.95;
-    const uint ScrWid = 1024, ScrHeight = 1024;
+    const Real scrWid = 4, scrHeight = 4, scrZ = -1;
     std::string savingPath = "./output.ppm";
-    bool enableProcessOutputs = true;
+    bool enableDisplayProcess = true; ///< whether to display the rendering process
+    bool enableLogOutputs = false; ///< whether to output the rendering log
 };
 #endif //RENDERCRAFT_RENDEROPTIONS_H

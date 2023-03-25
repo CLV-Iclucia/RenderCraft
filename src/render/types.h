@@ -5,16 +5,16 @@
 #ifndef RENDERCRAFT_TYPES_H
 #define RENDERCRAFT_TYPES_H
 
-#include "../../XMath/ext/Vector.h"
 
 using uint = unsigned int;
-using Real = double;
-using Vec2f = ext::Vector<float, 2u>;
-using Vec3f = ext::Vector<float, 3u>;
-using Vec4f = ext::Vector<float, 4u>;
-using Vec3b = ext::Vector<bool, 3u>;
-using Vec2 = ext::Vector<Real, 2u>;
-using Vec3 = ext::Vector<Real, 3u>;
-using Spectrum = ext::Vector<Real, 3u>;
-using Vec3i = ext::Vector<int, 3u>;
+using ext::Real;
+using ext::Mat3;
+using ext::Vec2f;
+using ext::Vec2;
+using ext::Vec3;
+using ext::Vec3b;
+using ext::Vec3f;
+using ext::Vec3i;
+using ext::Vec4f;
+using Spectrum = Vec3;
 #endif //RENDERCRAFT_TYPES_H

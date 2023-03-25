@@ -1,5 +1,6 @@
 #ifndef RENDERCRAFT_TEXTURE_H
 #define RENDERCRAFT_TEXTURE_H
+#include "types.h"
 #include "../../XMath/ext/Graphics/MathUtils.h"
 #include <memory>
 /**

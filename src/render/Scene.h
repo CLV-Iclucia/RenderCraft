@@ -10,15 +10,23 @@
 #include "BVH.h"
 #include "Light.h"
 #include "EnvMap.h"
+#include "Filter.h"
+#include "RenderOptions.h"
+#include "Camera.h"
+#include "Integrator.h"
 
 struct Scene
 {
-	std::vector<Shape*> shapes;
+    std::shared_ptr<Filter> filter;
+    RenderOptions opt;
+    Camera camera;
+	std::vector<Surface*> surfaces;
     BVH* BVHTree = nullptr;
     std::shared_ptr<EnvMap> envMap;
+    std::shared_ptr<Integrator> integrator;
 	const Real PRR = 0.9f;//probability of Russian Roullete
-	void intersect(const Ray& ray, Intersection *intsct);
+	void intersect(const Ray& ray, Intersection *intsct) const;
 	void init();
-
+    void render(); ///< compute the radiance of pixel (x, y)
 };
 #endif

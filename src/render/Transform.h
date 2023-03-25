@@ -5,22 +5,17 @@
 #ifndef RENDERCRAFT_TRANSFORM_H
 #define RENDERCRAFT_TRANSFORM_H
 #include <utility>
+#include "types.h"
 
-#include "../../XMath/core/core.h"
-#include "../../XMath/ext/Graphics/MathUtils.h"
-
-/**
- * first rotate, then translate
- */
 struct Transform
 {
-    Mat3x3<Real> rot;
-    Vec3 translate;
+    Mat3 rot;
+    Real scale = 1.0;
     Transform() = default;
     Transform(const Transform& _transform) = default;
-    Transform(Mat3&& _rot, Vec3 _translate) : rot(_rot), translate(std::move(_translate)) {}
-    Transform(const Mat3& _rot, Vec3 _translate) : rot(_rot), translate(std::move(_translate)) {}
+    Transform(Mat3 _rot, Real _scale) : rot(_rot), scale(_scale) {}
+    explicit Transform(Mat3 _rot) : rot(_rot) {}
     Transform inv() const;
-    Vec3 operator ()(const Vec3& v) const { return rot * v + translate; }
+    Vec3 operator ()(const Vec3& v) const { }
 };
 #endif //RENDERCRAFT_TRANSFORM_H
