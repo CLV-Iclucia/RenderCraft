@@ -2,9 +2,7 @@
 
 ## Getting Started
 
-Use
-
-`git clone --recursive`
+Use `git clone --recursive`
 
 to clone RenderCraft and its submodule.
 
