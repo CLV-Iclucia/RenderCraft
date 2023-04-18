@@ -2,7 +2,7 @@
 // Created by creeper on 22-11-20.
 //
 #include "Triangle.h"
-void Triangle::intersect(const Ray& ray, Intersection *intsct) const
+void Triangle::intersect(const Ray& ray, SurfaceInteraction *intsct) const
 {
 
 }

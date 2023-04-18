@@ -1,25 +1,40 @@
 #include "Sphere.h"
 #include <cmath>
-#include <cassert>
+#include "rd_maths.h"
 
-void Sphere::intersect(const Ray& ray, Intersection *intsct) const
+bool Sphere::intersect(const Ray& ray, SurfaceRecord *pRec) const
 {
-    Vec3 dif = ray.orig;
-    Real B = dif.dot(ray.dir);
+    Ray objRay = World2Obj(ray);
+    Vec3 dif = objRay.orig;
+    Real B = dif.dot(objRay.dir);
     Real C = dif.dot(dif) - R * R;
     Real delta = B * B - C;
-    if (delta < 0.0) return ;
+    if (delta < 0.0) return false;
     delta = std::sqrt(delta);
-    if (delta < B) return ;
-    intsct->uv = {};
-    intsct->hasIntersection = true;
-    intsct->dis = (B + delta) >= 0 ? (delta - B) : -(delta + B);
-    intsct->P = ray(intsct->dis);
-    intsct->normal = (intsct->P).normalized();
+    if (delta < B) return false;
+    Real dis = (B + delta) >= 0 ? (delta - B) : -(delta + B);
+    Vec3 localPos = objRay(dis);
+    pRec->uv = { localPos.x == 0.0 ? PI_DIV_2 : atan(localPos.y / localPos.x) / , acos(localPos.z / R)};
+    pRec->pos = Obj2World(localPos);
+    pRec->normal = Obj2World.transNormal(pRec->pos).normalized();
+    return true;
+}
+
+bool Sphere::intersect(const Ray& ray) const
+{
+    Ray objRay = World2Obj(ray);
+    Vec3 dif = objRay.orig;
+    Real B = dif.dot(objRay.dir);
+    Real C = dif.dot(dif) - R * R;
+    Real delta = B * B - C;
+    if (delta < 0.0) return false;
+    delta = std::sqrt(delta);
+    if (delta < B) return false;
+    return true;
 }
 
 Vec3 Sphere::sample(Real *pdf) const
 {
     *pdf = PI4_INV;
-    return uniform_sample_sphere() * R;
+    return uniformSampleSphere() * R;
 }

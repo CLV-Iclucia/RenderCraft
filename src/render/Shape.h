@@ -5,17 +5,18 @@
 #define RENDERCRAFT_SHAPE_H
 #include <utility>
 
-#include "../../XMath/ext/Vector.h"
 #include "Ray.h"
-#include "Intersection.h"
+#include "Record.h"
 #include "types.h"
+#include "Transform.h"
 
 class Shape
 {
     protected:
-        Vec3 pos;
+        Transform World2Obj;
+        Transform Obj2World;
     public:
-        explicit Shape(Vec3  _pos) : pos(std::move(_pos)) {}
+        Shape() = default;
         /**
          * sample a point on the surface of the shape given the position of the shape
          * @return the coordinates of the sample point
@@ -26,18 +27,15 @@ class Shape
          * @param ray a ray in the local space
          * @return an Intersection class recording the info of this intersection
          */
-        virtual void intersect(const Ray& ray, Intersection *intsct) const = 0;
-        virtual Vec3 getCoordMin() const = 0;
-		virtual Vec3 getCoordMax() const = 0;
+        virtual bool intersect(const Ray& ray, SurfaceRecord *pRec) const = 0;
+        virtual bool intersect(const Ray& ray) const = 0;
+		virtual BBox3 AABB() const = 0;
         /**
          * calc the surface area of the shape
          * @return the are of the surface of the shape
          */
         virtual Real pdfSample(const Vec3& p) const = 0;
         virtual ~Shape() = default;
-        Real getX() const { return pos[0]; }
-        Real getY() const { return pos[1]; }
-        Real getZ() const { return pos[2]; }
 };
 
 

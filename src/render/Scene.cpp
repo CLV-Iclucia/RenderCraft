@@ -6,12 +6,12 @@
 #include <cmath>
 #include <fstream>
 #include "Scene.h"
-void Scene::intersect(const Ray& ray, Intersection *intsct) const
+void Scene::intersect(const Ray& ray, SurfaceInteraction *intsct) const
 {
     assert(intsct->hasIntersection == false);
-    for (auto obj : surfaces)
+    for (auto obj : primitives)
     {
-        Intersection inter;
+        SurfaceInteraction inter;
         obj->intersect(ray, &inter);
         if (inter.hasIntersection && (!intsct->hasIntersection || intsct->dis >= inter.dis))
             *intsct = inter;
@@ -19,8 +19,8 @@ void Scene::intersect(const Ray& ray, Intersection *intsct) const
 }
 void Scene::init()
 {
-    std::sort(surfaces.begin(), surfaces.end(), surfacePtrCmp);
-    BVHTree = new BVH(surfaces);
+    std::sort(primitives.begin(), primitives.end(), surfacePtrCmp);
+    BVHTree = new BVH(primitives);
 }
 
 void Scene::render()

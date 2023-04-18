@@ -15,7 +15,7 @@ class Surface
         Transform transform;
     public:
         std::shared_ptr<Shape> shape() { return pShape; }
-        void intersect(const Ray& ray, Intersection* intsct) const
+        void intersect(const Ray& ray, SurfaceInteraction* intsct) const
         {
             pShape->intersect(ray, intsct);
         }

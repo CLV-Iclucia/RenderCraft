@@ -1,12 +1,17 @@
 #ifndef RENDERCRAFT_TEXTURE_H
 #define RENDERCRAFT_TEXTURE_H
 #include "types.h"
-#include "../../XMath/ext/Graphics/MathUtils.h"
 #include <memory>
 /**
  * \brief All textures in RenderCraft are considered as "distribution".
  *        They describe the distribution of properties(roughness, normals, colors, e.g.)
  */
+
+class TextureMapping
+{
+    public:
+        virtual Vec2 map(Real x, Real y) const = 0;
+};
 
 /**
  * @tparam T the type of the texture value.
@@ -50,7 +55,7 @@ class PerlinNoise : public Texture<T>
         /**
          * Todo: an interpolation method need to be implemented in XMath
          */
-        T eval(const Vec2 uv) const override
+        T eval(const Vec2& uv) const override
         {
 
         }

@@ -5,22 +5,24 @@
 #ifndef RENDERCRAFT_INTEGRATOR_H
 #define RENDERCRAFT_INTEGRATOR_H
 
-#include "../../XMath/ext/Vector.h"
 #include "types.h"
 #include "Scene.h"
 #include "Filter.h"
 #include "Ray.h"
 #include "RenderOptions.h"
 #include "Camera.h"
+#include "Spectrums.h"
 
 class Integrator
 {
     public:
-        virtual Spectrum L(uint x, uint y) const = 0;
+        virtual Spectrum L(const Ray& ray) const = 0;
 };
 
 class PathTracer : public Integrator
 {
+    private:
+        std::shared_ptr<Scene> scene;
     public:
         Spectrum L(const Ray& ray) const override;
 };

@@ -1,13 +1,14 @@
 #include <cassert>
 #include "BVH.h"
-bool BoundingVolume::intersect(const Ray& ray) const
+
+static bool intersectBox(const BBox3& bbox, const Ray& ray)
 {
     const Vec3& orig = ray.orig;
     const Vec3& dir = ray.dir;
     const Vec3 invDir = 1.0 / dir;
     const Vec3b dirIsNeg = Vec3b({ dir[0] > 0.0, dir[1] > 0.0, dir[2] > 0.0, });
-    Vec3 tMin = (pMin - orig) * invDir;
-    Vec3 tMax = (pMax - orig) * invDir;
+    Vec3 tMin = (bbox.lower - orig) * invDir;
+    Vec3 tMax = (bbox.upper - orig) * invDir;
     if (!dirIsNeg[0]) std::swap(tMin[0], tMax[0]);
     if (!dirIsNeg[1]) std::swap(tMin[1], tMax[1]);
     if (!dirIsNeg[2]) std::swap(tMin[2], tMax[2]);
@@ -16,9 +17,9 @@ bool BoundingVolume::intersect(const Ray& ray) const
     if (t_in > t_out || t_out < 0.0) return false;
     else return true;
 }
-void build(Node*& o, const std::vector<std::shared_ptr<Shape>>& shapes, int l, int r)
+void build(BVHNode*& o, const std::vector<std::shared_ptr<Shape>>& shapes, int l, int r)
 {
-    o = new Node;
+    o = new BVHNode;
     Real MinX = 1e9, MaxX = -1e9;
     Vec3 pMin(1e9), pMax(-1e9);
     for (int i = l; i <= r; i++)
@@ -26,7 +27,6 @@ void build(Node*& o, const std::vector<std::shared_ptr<Shape>>& shapes, int l, i
         auto obj = shapes[i];
         MinX = std::min(obj->getX(), obj->getX());
         MaxX = std::max(obj->getX(), obj->getX());
-        Vec3 _pMin = obj->getCoordMin();
         Vec3 _pMax = obj->getCoordMax();
         for(int j = 0; j < 3; j++)
             pMin[j] = std::min(pMin[j], _pMin[j]);
@@ -51,16 +51,16 @@ void build(Node*& o, const std::vector<std::shared_ptr<Shape>>& shapes, int l, i
     build(o->lch, shapes, l, L);
     if(L < r)build(o->rch, shapes, L + 1, r);
 }
-BVH::BVH(const std::vector<std::shared_ptr<Shape>>& shapes)
+BVH::BVH(const std::vector<std::shared_ptr<Primitive>>& shapes)
 {
     assert(!shapes.empty());
     build(rt, shapes, 0, shapes.size() - 1);
 }
-static void intersect(const Node* o, const Ray& ray, Intersection *intsct)
+
+static bool intersect(const BVHNode* o, const Ray& ray, SurfaceRecord *intsct)
 {
-    Intersection inter;
     if (o->lch == nullptr && o->rch == nullptr)
-        o->obj->intersect(ray, intsct);
+        o->pr->intersect(ray, intsct);
     else if (o->rch == nullptr && o->lch->B.intersect(ray))
         intersect(o->lch, ray, intsct);
     else if (o->lch == nullptr && o->rch->B.intersect(ray))
@@ -73,7 +73,7 @@ static void intersect(const Node* o, const Ray& ray, Intersection *intsct)
         else if (!intL && intR) return intersect(o->rch, ray, intsct);
         else
         {
-            Intersection interL;
+            SurfaceInteraction interL;
             intersect(o->lch, ray, &interL);
             intersect(o->rch, ray, intsct);
             if (interL.hasIntersection && (!intsct->hasIntersection || interL.dis < intsct->dis))
@@ -81,8 +81,13 @@ static void intersect(const Node* o, const Ray& ray, Intersection *intsct)
         }
     }
 }
-void BVH::intersect(const Ray& ray, Intersection *intsct) const
+bool BVH::intersect(const Ray& ray, SurfaceRecord *intsct) const
 {
-    if(rt->B.intersect(ray))
-        ::intersect(rt, ray, intsct);
+    if(intersectBox(rt->bbox, ray))
+        return ::intersect(rt, ray, intsct);
+}
+
+bool BVH::intersect(const Ray &) const
+{
+    return false;
 }

@@ -1,15 +1,15 @@
 #ifndef RENDERCRAFT_RAY_H
 #define RENDERCRAFT_RAY_H
-#include "../../XMath/ext/Graphics/MathUtils.h"
+
+#include "types.h"
 struct Ray
 {
     Vec3 orig, dir;
-    Ray() = default;
     Ray(const Vec3& _orig, const Vec3& _dir) : orig(_orig), dir(_dir){}
     Ray(Vec3&& _orig, const Vec3& _dir) : orig(std::move(_orig)), dir(_dir){}
     Ray(const Vec3& _orig, Vec3&& _dir) : orig(_orig), dir(std::move(_dir)){}
     Ray(Vec3&& _orig, Vec3&& _dir) : orig(std::move(_orig)), dir(std::move(_dir)){}
-    Vec3 operator()(Real t) const {return orig + t * dir;}
+    Vec3 operator()(Real t) const { return orig + t * dir; }
 };
 
 /**

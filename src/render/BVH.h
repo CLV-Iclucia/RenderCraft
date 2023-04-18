@@ -1,29 +1,22 @@
 #ifndef RENDERCRAFT_BVH_H
 #define RENDERCRAFT_BVH_H
 #include "Ray.h"
-#include "Box.h"
-#include "Intersection.h"
+#include "Record.h"
 #include <vector>
 #include "Object.h"
-struct BoundingVolume
+struct BVHNode
 {
-	public:
-		bool intersect(const Ray&) const;
-		Vec3 pMin, pMax;
-};
-struct Node
-{
-	BoundingVolume B;
-	Node* lch = nullptr, *rch = nullptr;
-    Surface* obj;
+	BBox3 bbox;
+	BVHNode* lch = nullptr, *rch = nullptr;
+    std::shared_ptr<Primitive> pr;
 };
 class BVH
 {
 	public:
-		explicit BVH(const std::vector<Surface*>&);
-		void intersect(const Ray&, Intersection *intsct) const;
+		bool intersect(const Ray&, SurfaceRecord *pRec) const;
+        bool intersect(const Ray&) const;
 	private:
-		Node* rt;
+		BVHNode* rt;
 };
 
 #endif

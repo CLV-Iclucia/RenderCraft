@@ -13,7 +13,7 @@ class Triangle : public Shape
 {
     public:
         bool isConvex() const override { return true; }
-        void intersect(const Ray& ray, Intersection *intsct) const override;
+        void intersect(const Ray& ray, SurfaceInteraction *intsct) const override;
         Triangle() = default;
         Vec3 getLocalCoordMin() const override;
 		Vec3 getLocalCoordMax() const override;
