@@ -3,19 +3,24 @@
 #include "Ray.h"
 #include "Record.h"
 #include <vector>
-#include "Object.h"
+
+class Primitive;
 struct BVHNode
 {
-	BBox3 bbox;
+    // TODO: Add default destructor for BoundingBox in MX3D
+    BBox3 bbox;
+    BVHNode() = default;
 	BVHNode* lch = nullptr, *rch = nullptr;
-    std::shared_ptr<Primitive> pr;
+    std::shared_ptr<Primitive> pr = nullptr;
 };
 class BVH
 {
 	public:
 		bool intersect(const Ray&, SurfaceRecord *pRec) const;
         bool intersect(const Ray&) const;
+        BBox3 getBBox() const { return rt->bbox; }
 	private:
+        enum { ByIndex } divStrategy;
 		BVHNode* rt;
 };
 

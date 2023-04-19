@@ -3,6 +3,7 @@
 #include "Microfacet.h"
 #include <memory>
 #include <utility>
+#include "Spectrums.h"
 struct Material
 {
     virtual Vec3 BxDF(const Vec3&, const Vec3&, const Vec2&) const = 0;

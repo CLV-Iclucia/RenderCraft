@@ -12,7 +12,11 @@ struct Camera
 {
     uint nx, ny;
     Vec3 pos;
-    void castRay(const Vec3& dir, Ray* ray) const;
+    void castRay(const Vec3& dir, Ray* ray) const
+    {
+        ray->orig = pos;
+        ray->dir = dir.normalized();
+    }
 };
 
 

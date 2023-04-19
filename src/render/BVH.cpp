@@ -1,6 +1,6 @@
 #include <cassert>
 #include "BVH.h"
-
+#include "Primitive.h"
 static bool intersectBox(const BBox3& bbox, const Ray& ray)
 {
     const Vec3& orig = ray.orig;
@@ -17,44 +17,27 @@ static bool intersectBox(const BBox3& bbox, const Ray& ray)
     if (t_in > t_out || t_out < 0.0) return false;
     else return true;
 }
-void build(BVHNode*& o, const std::vector<std::shared_ptr<Shape>>& shapes, int l, int r)
+void build(BVHNode*& o, const std::vector<std::shared_ptr<Primitive>>& primitives, int l, int r)
 {
     o = new BVHNode;
-    Real MinX = 1e9, MaxX = -1e9;
-    Vec3 pMin(1e9), pMax(-1e9);
-    for (int i = l; i <= r; i++)
-    {
-        auto obj = shapes[i];
-        MinX = std::min(obj->getX(), obj->getX());
-        MaxX = std::max(obj->getX(), obj->getX());
-        Vec3 _pMax = obj->getCoordMax();
-        for(int j = 0; j < 3; j++)
-            pMin[j] = std::min(pMin[j], _pMin[j]);
-        for(int j = 0; j < 3; j++)
-            pMax[j] = std::max(pMax[j], _pMax[j]);
-    }
-    o->B.pMin = pMin;
-    o->B.pMax = pMax;
     if (l == r)
     {
-        o->obj = shapes[l];
+        o->pr = primitives[l];
+        o->bbox = primitives[l]->getBBox();
         return;
     }
-    Real MidX = (MinX + MaxX) * 0.5;
-    int L = l, R = r;
-    while (L < R)
-    {
-        int mid = (L + R) >> 1;
-        if (shapes[mid]->getX() < MidX) L = mid + 1;
-        else R = mid;
-    }
-    build(o->lch, shapes, l, L);
-    if(L < r)build(o->rch, shapes, L + 1, r);
+    int mid = (l + r) >> 1;
+    build(o->lch, primitives, l, mid);
+    if(mid < r)build(o->rch, primitives, mid + 1, r);
+    if(o->lch && !o->rch) o->bbox = o->lch->bbox;
+    if(o->rch && !o->lch) o->bbox = o->rch->bbox;
+    if(o->lch && o->rch)
+        o->bbox = o->lch->bbox.merge(o->rch->bbox);
 }
-BVH::BVH(const std::vector<std::shared_ptr<Primitive>>& shapes)
+BVH::BVH(const std::vector<std::shared_ptr<Primitive>>& primitives)
 {
     assert(!shapes.empty());
-    build(rt, shapes, 0, shapes.size() - 1);
+    build(rt, primitives, 0, primitives.size() - 1);
 }
 
 static bool intersect(const BVHNode* o, const Ray& ray, SurfaceRecord *intsct)
@@ -83,7 +66,7 @@ static bool intersect(const BVHNode* o, const Ray& ray, SurfaceRecord *intsct)
 }
 bool BVH::intersect(const Ray& ray, SurfaceRecord *intsct) const
 {
-    if(intersectBox(rt->bbox, ray))
+    if(intersectBox(rt->pr->getBBox(), ray))
         return ::intersect(rt, ray, intsct);
 }
 

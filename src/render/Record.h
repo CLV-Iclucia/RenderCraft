@@ -8,7 +8,6 @@
 #include "Light.h"
 
 class Primitive;
-
 struct Record
 {
     Vec3 pos;
@@ -22,10 +21,11 @@ struct SurfaceRecord : public Record
     Vec2 uv; ///< tex coord of the intersection point
     Vec3 dpdu, dpdv;
     Vec3 dndu, dndv;
-    void calcScatter(const Vec3& wi, const Vec3& wo) const
-    {
-
-    }
+    Real calcScatter(const Vec3& wi, const Vec3& wo) const;
 };
 
+struct VolumeRecord : public Record
+{
+
+};
 #endif

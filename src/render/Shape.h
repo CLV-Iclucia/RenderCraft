@@ -6,10 +6,10 @@
 #include <utility>
 
 #include "Ray.h"
-#include "Record.h"
 #include "types.h"
 #include "Transform.h"
 
+class SurfaceRecord;
 class Shape
 {
     protected:
@@ -29,7 +29,7 @@ class Shape
          */
         virtual bool intersect(const Ray& ray, SurfaceRecord *pRec) const = 0;
         virtual bool intersect(const Ray& ray) const = 0;
-		virtual BBox3 AABB() const = 0;
+		virtual BBox3 getBBox() const = 0;
         /**
          * calc the surface area of the shape
          * @return the are of the surface of the shape

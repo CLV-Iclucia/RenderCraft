@@ -12,7 +12,7 @@ class Sphere : public Shape
 		explicit Sphere(Real r) : R(r) {}
         bool intersect(const Ray& ray, SurfaceRecord *pRec) const override;
         bool intersect(const Ray& ray) const override;
-		BBox3 AABB() const override { return {Vec3{-R, -R, -R}, Vec3{R, R, R}}; }
+		BBox3 getBBox() const override { return {Vec3{-R, -R, -R}, Vec3{R, R, R}}; }
         Vec3 sample(Real *pdf) const override;
 	private:
 		Real R = 0.0;
