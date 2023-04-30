@@ -3,21 +3,32 @@
 
 #include "types.h"
 #include "Spectrums.h"
+#include <memory>
+#include "Shape.h"
 
+class Primitive;
 /**
  * Basic light interfaces.
  */
 class Light
 {
     public:
-        virtual Spectrum evalEmission(const Vec3& pos, const Vec3& dir) const = 0;
-        virtual Real pdfSample(const Vec3& pos) const = 0;
-        virtual Vec3 sample(const Vec3& pos) const = 0;
+        virtual Spectrum evalEmission(const Patch& pn, const Vec3& wo) const = 0;
+        virtual Real pdfSample(const Patch& pos, const Vec3& ref) const = 0;
+        virtual Patch sample(const Vec3& ref, Real* pdf) const = 0;
 };
 
-class DirectLight : public Light
+class AreaLight : public Light
 {
-
+    private:
+        std::shared_ptr<Shape> shape;
+        Spectrum radiance;
+    public:
+        Spectrum evalEmission(const Patch& pn, const Vec3& wo) const override
+        { return wo.dot(pn.n)  > 0.0 ? radiance : Spectrum(); }
+        Real pdfSample(const Patch& pn, const Vec3& ref) const override
+        { return shape->pdfSample(pn.p, ref); }
+        Patch sample(const Vec3& ref, Real* pdf) const override
+        { return shape->sample(ref, pdf); }
 };
-
 #endif

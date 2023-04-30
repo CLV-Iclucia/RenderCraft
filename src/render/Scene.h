@@ -17,12 +17,25 @@ class Integrator;
 struct Scene
 {
     std::shared_ptr<Filter> filter;
-    RenderOptions opt;
     Camera camera;
     Aggregate* pr;
     BVH* BVHTree = nullptr;
     std::shared_ptr<EnvMap> envMap = nullptr;
     std::shared_ptr<Integrator> integrator;
+    std::vector<AreaLight*> areaLights;
     void render(); ///< compute the radiance of pixel (x, y)
+    Light* sampleLight(Real* pdf) const
+    {
+        // TODO: implement this!
+    }
+    bool testVisibility(const Vec3& A, const Vec3& B) const
+    {
+        Ray test_ray(A, B - A);
+        return pr->intersect(test_ray);
+    }
+    Real pdfSampleLight() const
+    {
+
+    }
 };
 #endif

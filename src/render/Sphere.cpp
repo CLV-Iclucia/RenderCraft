@@ -33,8 +33,21 @@ bool Sphere::intersect(const Ray& ray) const
     return true;
 }
 
-Vec3 Sphere::sample(Real *pdf) const
+Patch Sphere::sample(Real *pdf) const
 {
     *pdf = PI4_INV;
-    return uniformSampleSphere() * R;
+    Vec3 ret = uniformSampleSphere();
+    return { ret * R, ret };
+}
+
+Patch Sphere::sample(const Vec3 &ref, Real *pdf) const
+{
+    // TODO: Implement the sampling here
+    return Patch();
+}
+
+Patch Sphere::sample(const Vec3 &ref) const
+{
+    // TODO:
+    return Patch();
 }

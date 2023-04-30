@@ -100,7 +100,7 @@ class Aggregate : public Primitive
             return hasIntersection;
         }
         bool intersect(const Ray& ray) const override { return bvh->intersect(ray); }
-        BBox3 getBBox() const { return bvh->getBBox(); }
+        BBox3 getBBox() const override { return bvh->getBBox(); }
 };
 
 

@@ -17,23 +17,24 @@
 class Integrator
 {
     protected:
+        RenderOptions opt;
         std::shared_ptr<Scene> scene = nullptr;
     public:
-        virtual Spectrum L(const Ray& ray) const = 0;
+        virtual Spectrum render(const Ray& ray) const = 0;
 };
 
 class PathTracer final: public Integrator
 {
     private:
-        Spectrum nextEventEst() const;
+        Spectrum nextEventEst(const SurfaceRecord& bRec) const;
     public:
-        Spectrum L(const Ray& ray) const override;
+        Spectrum render(const Ray& ray) const override;
 };
 
 class VolumePathTracer : public Integrator
 {
     public:
-        Spectrum L(const Ray& ray) const override;
+        Spectrum render(const Ray& ray) const override;
 };
 
 #endif //RENDERCRAFT_INTEGRATOR_H

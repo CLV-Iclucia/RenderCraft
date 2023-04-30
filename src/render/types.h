@@ -19,4 +19,9 @@ using mx3d::Vec3f;
 using mx3d::Vec3i;
 using mx3d::BoundingBox;
 using BBox3 = BoundingBox<3u>;
+struct Patch
+{
+    Vec3 p;
+    Vec3 n;
+};
 #endif //RENDERCRAFT_TYPES_H

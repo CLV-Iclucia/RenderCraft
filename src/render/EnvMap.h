@@ -6,8 +6,8 @@
 #define RENDERCRAFT_ENVMAP_H
 
 
-#include "../../XMath/ext/Graphics/MathUtils.h"
 #include "types.h"
+#include "Light.h"
 
 class EnvMap
 {

@@ -21,7 +21,9 @@ class Shape
          * sample a point on the surface of the shape given the position of the shape
          * @return the coordinates of the sample point
          */
-        virtual Vec3 sample(Real *pdf) const = 0;
+        virtual Patch sample(Real *pdf) const = 0;
+        virtual Patch sample(const Vec3& ref, Real *pdf) const = 0;
+        virtual Patch sample(const Vec3& ref) const = 0;
         /**
          * calc the intersection with a given ray
          * @param ray a ray in the local space
@@ -35,6 +37,7 @@ class Shape
          * @return the are of the surface of the shape
          */
         virtual Real pdfSample(const Vec3& p) const = 0;
+        virtual Real pdfSample(const Vec3& p, const Vec3& ref) const = 0;
         virtual ~Shape() = default;
 };
 

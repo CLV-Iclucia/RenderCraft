@@ -23,7 +23,7 @@ void Scene::render()
                 const Real rx = (i + offset[0]) * opt.scrWid / camera.nx - opt.scrWid * 0.5;
                 const Real ry = (j + offset[1]) * opt.scrHeight / camera.ny - opt.scrHeight * 0.5;
                 camera.castRay({rx, ry, -opt.scrZ}, &ray);
-                radiance += integrator->L(ray) / filter->pdfSample(offset[0], offset[1]);
+                radiance += integrator->render(ray) / filter->pdfSample(offset[0], offset[1]);
             }
             radiance /= static_cast<Real>(opt.spp);
             if (radiance[0] >= 1.0) radiance[0] = 1.0;
