@@ -1,0 +1,5 @@
+file(GLOB_RECURSE srcs src/*.cc src/*.cc include/*.h include/*.hpp)
+add_library(Core ${srcs})
+target_include_directories(Core PUBLIC include)
+target_include_directories(Core PUBLIC ../external/glm)
+target_link_libraries(Core PUBLIC pugixml)
