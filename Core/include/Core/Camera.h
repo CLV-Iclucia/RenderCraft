@@ -5,19 +5,17 @@
 #ifndef RENDERCRAFT_CAMERA_H
 #define RENDERCRAFT_CAMERA_H
 
-#include "Ray.h"
-#include "core.h"
-
-struct Camera
-{
-    uint nx, ny;
-    Vec3 pos;
-    void castRay(const Vec3& dir, Ray* ray) const
-    {
-        ray->orig = pos;
-        ray->dir = dir.normalized();
-    }
+#include <Core/Ray.h>
+#include <Core/core.h>
+namespace rdcraft {
+struct Camera {
+  uint nx, ny;
+  Vec3 pos;
+  Vec3 dir;
+  void castRay(const Vec3 &ray_dir, Ray *ray) const {
+    ray->orig = pos;
+    ray->dir = glm::normalize(ray_dir);
+  }
 };
-
-
+}
 #endif //RENDERCRAFT_CAMERA_H

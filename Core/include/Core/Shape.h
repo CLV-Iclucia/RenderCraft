@@ -7,23 +7,26 @@
 
 #include <Core/Ray.h>
 #include <Core/Transform.h>
-#include <Core/types.h>
+#include <Core/core.h>
 
+namespace rdcraft {
 class SurfaceRecord;
+/*
+ * All shapes are defined in object coordinate space.
+ * So a transform is needed
+ * */
 class Shape {
-protected:
-  Transform World2Obj;
-  Transform Obj2World;
+ protected:
+  std::shared_ptr<Transform> World2Obj;
+  std::shared_ptr<Transform> Obj2World;
 
-public:
+ public:
   Shape() = default;
   /**
    * sample a point on the surface of the shape given the position of the shape
    * @return the coordinates of the sample point
    */
   virtual Patch sample(Real *pdf) const = 0;
-  virtual Patch sample(const Vec3 &ref, Real *pdf) const = 0;
-  virtual Patch sample(const Vec3 &ref) const = 0;
   /**
    * calc the intersection with a given ray
    * @param ray a ray in the local space
@@ -31,7 +34,7 @@ public:
    */
   virtual bool intersect(const Ray &ray, SurfaceRecord *pRec) const = 0;
   virtual bool intersect(const Ray &ray) const = 0;
-  virtual BBox3 getBBox() const = 0;
+  virtual AABB getAABB() const = 0;
   /**
    * calc the surface area of the shape
    * @return the are of the surface of the shape
@@ -40,5 +43,6 @@ public:
   virtual Real pdfSample(const Vec3 &p, const Vec3 &ref) const = 0;
   virtual ~Shape() = default;
 };
+}
 
 #endif // RENDERCRAFT_SHAPE_H

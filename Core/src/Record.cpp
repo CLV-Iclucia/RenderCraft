@@ -1,10 +1,11 @@
 //
 // Created by creeper on 23-4-19.
 //
-#include "types.h"
-#include "Record.h"
+#include <Core/core.h>
+#include <Core/Record.h>
 
-Real SurfaceRecord::calcScatter(const Vec3 &wi, const Vec3 &wo) const
-{
+namespace rdcraft {
+Real SurfaceRecord::computeScatter(const Vec3 &wi, const Vec3 &wo) const {
 
+}
 }

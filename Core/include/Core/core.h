@@ -5,26 +5,21 @@
 #ifndef RENDERCRAFT_TYPES_H
 #define RENDERCRAFT_TYPES_H
 
-#include <mx3d_Vector.h>
-#include <mx3d_Matrix.h>
-#include <mx3d_BoudingBox.h>
-namespace core {
+#include <glm/glm.hpp>
+namespace rdcraft {
 using uint = unsigned int;
-using mx3d::Real;
-using mx3d::Mat3;
-using mx3d::Vec2f;
-using mx3d::Vec2;
-using mx3d::Vec3;
-using mx3d::Vec3b;
-using mx3d::Vec3f;
-using mx3d::Vec3i;
-using mx3d::BoundingBox;
-using BBox3 = BoundingBox<3u>;
-struct Patch
-{
+using Real = double;
+using Mat3 = glm::highp_mat3;
+using Vec2f = glm::vec2;
+using Vec2 = glm::highp_vec2;
+using Vec3 = glm::highp_vec3;
+using Vec3b = glm::bvec3;
+using Vec3f = glm::vec3;
+using Vec3i = glm::ivec3;
+using AABB = std::tuple<Vec3, Vec3>;
+struct Patch {
   Vec3 p;
   Vec3 n;
 };
 }
-
 #endif //RENDERCRAFT_TYPES_H

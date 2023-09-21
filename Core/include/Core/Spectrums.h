@@ -5,27 +5,24 @@
 #ifndef RENDERCRAFT_SPECTRUMS_H
 #define RENDERCRAFT_SPECTRUMS_H
 
-#include "core.h"
+#include <Core/core.h>
 
+namespace rdcraft {
 template<uint N>
-class SampledSpectrum
-{
-    private:
-        Real lambda[N];
-        Real distrib[N];
-    public:
-        Vec3 toXYZ() const
-        {
+class SampledSpectrum {
+ private:
+  Real lambda[N];
+  Real distrib[N];
+ public:
+  Vec3 toXYZ() const {
 
-        }
-        Vec3 toRGB() const
-        {
+  }
+  Vec3 toRGB() const {
 
-        }
+  }
 };
 
-inline Vec3 XYZ2RGB(const Vec3& spec)
-{
+inline Vec3 XYZ2RGB(const Vec3 &spec) {
 
 }
 
@@ -33,4 +30,6 @@ Vec3 makeZeroSpectrum() { return Vec3(0.0); }
 
 using RGBSpectrum = Vec3;
 using Spectrum = RGBSpectrum;
+
+}
 #endif //RENDERCRAFT_SPECTRUMS_H
