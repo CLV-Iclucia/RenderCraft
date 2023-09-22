@@ -2,21 +2,21 @@
 #include <Core/BVH.h>
 #include <Core/Primitive.h>
 namespace rdcraft {
-static AABB mergeAABB(AABB &lhs, AABB &rhs) {
-  return {Vec3(std::min(get<0>(lhs)[0], get<0>(rhs)[0]),
-               std::min(get<0>(lhs)[1], get<0>(rhs)[1]),
-               std::min(get<0>(lhs)[2], get<0>(rhs)[2])),
-          Vec3(std::max(get<1>(lhs)[0], get<1>(rhs)[0]),
-               std::max(get<1>(lhs)[1], get<1>(rhs)[1]),
-               std::max(get<1>(lhs)[2], get<1>(rhs)[2]))};
+static AABB mergeAABB(const AABB &lhs, const AABB &rhs) {
+  return {Vec3(std::min(lo(lhs).x, lo(rhs).x),
+               std::min(lo(lhs).y, lo(rhs).y),
+               std::min(lo(lhs).z, lo(rhs).z)),
+          Vec3(std::max(hi(lhs).x, hi(rhs).x),
+               std::max(hi(lhs).y, hi(rhs).y),
+               std::max(hi(lhs).z, hi(rhs).z))};
 }
 static bool intersect(const AABB &bbox, const Ray &ray) {
   const Vec3 &orig = ray.orig;
   const Vec3 &dir = ray.dir;
   const Vec3 invDir = 1.0 / dir;
   const Vec3b dirIsNeg = Vec3b(dir[0] > 0.0, dir[1] > 0.0, dir[2] > 0.0);
-  Vec3 tMin = (get<0>(bbox) - orig) * invDir;
-  Vec3 tMax = (get<1>(bbox) - orig) * invDir;
+  Vec3 tMin = (lo(bbox) - orig) * invDir;
+  Vec3 tMax = (hi(bbox) - orig) * invDir;
   if (!dirIsNeg[0]) std::swap(tMin[0], tMax[0]);
   if (!dirIsNeg[1]) std::swap(tMin[1], tMax[1]);
   if (!dirIsNeg[2]) std::swap(tMin[2], tMax[2]);
@@ -47,27 +47,32 @@ BVH::BVH(const std::vector<std::shared_ptr<Primitive>> &primitives) {
 
 static bool intersect(const BVHNode *o, const Ray &ray, SurfaceRecord *intsct) {
   if (o->lch == nullptr && o->rch == nullptr)
-    o->pr->intersect(ray, intsct);
+    return o->pr->intersect(ray, intsct);
   else if (o->rch == nullptr && intersect(o->lch->bbox, ray))
-    intersect(o->lch, ray, intsct);
+    return intersect(o->lch, ray, intsct);
   else if (o->lch == nullptr && intersect(o->rch->bbox, ray))
-    intersect(o->rch, ray, intsct);
+    return intersect(o->rch, ray, intsct);
   else {
     bool intL = intersect(o->lch->bbox, ray);
     bool intR = intersect(o->rch->bbox, ray);
-    if (intL && !intR) return intersect(o->lch, ray, intsct);
-    else if (!intL && intR) return intersect(o->rch, ray, intsct);
-    else {
+    if (intL && !intR) 
+      return intersect(o->lch, ray, intsct);
+    else if (!intL && intR) 
+      return intersect(o->rch, ray, intsct);
+    else if (intL && intR) {
       SurfaceRecord record;
-      intersect(o->lch, ray, &record);
-      intersect(o->rch, ray, intsct);
-
-    }
+      if (intersect(o->lch, ray, intsct)) return true;
+      else if (intersect(o->rch, ray, intsct)) return true;
+      else return false;
+    } else
+      return false;
   }
 }
-bool BVH::intersect(const Ray &ray, SurfaceRecord *intsct) const {
-  if (intersect(rt->pr->getAABB(), ray))
-    return ::intersect(rt, ray, intsct);
+
+bool BVH::intersect(const Ray &ray, SurfaceRecord *record) const {
+  if (rdcraft::intersect(rt->pr->getAABB(), ray))
+    return rdcraft::intersect(rt, ray, record);
+  else return false;
 }
 
 bool BVH::intersect(const Ray &) const {

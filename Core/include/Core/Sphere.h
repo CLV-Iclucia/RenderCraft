@@ -15,8 +15,6 @@ class Sphere : public Shape {
   bool intersect(const Ray &ray) const override;
   AABB getAABB() const override { return {Vec3{-R, -R, -R}, Vec3{R, R, R}}; }
   Patch sample(Real *pdf) const override;
-  Patch sample(const Vec3 &p, Real *pdf) const override;
-  Patch sample(const Vec3 &p) const override;
 
  private:
   Real R = 0.0;

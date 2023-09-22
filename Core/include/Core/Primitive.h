@@ -14,6 +14,7 @@
 #include <variant>
 #include <vector>
 #include <Core/log.h>
+#include <Core/BVH.h>
 namespace rdcraft {
 class Primitive {
  public:

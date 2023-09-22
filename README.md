@@ -2,10 +2,6 @@
 
 ## Getting Started
 
-Use `git clone --recursive`
-
-to clone RenderCraft and its submodule.
-
 ### RenderCraft is an offline renderer based on ray-tracing method.
 
 Now the features and functions are far from complete...
@@ -16,4 +12,6 @@ If you are looking for some rendering stuff, then I suggest that you should see 
 
 # Acknowledgement
 
-I use pugixml and the parse_scene module from lajolla renderer.
+I use pugixml for xml parsing.
+
+I use glm for 3D mathematics.

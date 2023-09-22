@@ -1,6 +1,7 @@
 #ifndef RENDERCRAFT_TEXTURE_H
 #define RENDERCRAFT_TEXTURE_H
 #include <Core/core.h>
+#include <Core/rand-gen.h>
 #include <memory>
 /**
  * \brief All textures in RenderCraft are considered as <Core/distribution>.
@@ -51,7 +52,7 @@ class PerlinNoise : public Texture<T>
     a = new T[m * n];
     for(int i = 0; i < m; i++)
       for(int j = 0; j < n; j++)
-        a[i * m + j] = get_random();
+        a[i * m + j] = randomReal();
   }
   /**
    * Todo: an interpolation method need to be implemented in XMath

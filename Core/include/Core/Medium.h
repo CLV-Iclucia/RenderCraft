@@ -4,10 +4,16 @@
 
 #ifndef RENDERCRAFT_MEDIUM_H
 #define RENDERCRAFT_MEDIUM_H
-
+#include <Core/Spectrums.h>
+namespace rdcraft {
+struct Medium {
+  bool isVolume = false;
+  Real eta = 1.0;
+};
 struct MediumInterface {
   int internal_id = -1;
   int external_id = -1;
   MediumInterface(int internal, int external) : internal_id(internal), external_id(external) {}
 };
+}
 #endif //RENDERCRAFT_MEDIUM_H

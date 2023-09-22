@@ -8,7 +8,6 @@
 #include <Core/Camera.h>
 #include <Core/Filter.h>
 #include <Core/Ray.h>
-#include <Core/RenderOptions.h>
 #include <Core/Scene.h>
 #include <Core/Spectrums.h>
 #include <Core/core.h>
@@ -17,10 +16,8 @@
 
 namespace rdcraft {
 class Integrator {
- protected:
-  std::shared_ptr<Scene> scene = nullptr;
  public:
-  virtual Spectrum render() const = 0;
+  virtual void render(Scene* scene) const = 0;
 };
 
 class PathTracer final : public Integrator {
@@ -30,13 +27,14 @@ class PathTracer final : public Integrator {
     const Real PRR = 0.95;
     const Real scrWid = 4, scrHeight = 4, scrZ = -1;
     std::string savingPath = "./output.ppm";
+    int threadNum = 1;
     bool enableDisplayProcess = true; ///< whether to display the rendering process
     bool enableLogOutputs = false; ///< whether to output the rendering log
-  };
-  Spectrum nextEventEst(const SurfaceRecord &bRec) const;
+  } opt;
+  Spectrum nextEventEst(const SurfaceRecord &bRec, Scene* scene) const;
  public:
   Spectrum L(const Ray&, Scene* scene) const;
-  Spectrum render() const override;
+  void render(Scene* scene) const override;
 };
 
 class VolumePathTracer : public Integrator {
@@ -45,13 +43,13 @@ class VolumePathTracer : public Integrator {
     const uint spp = 256;
     const Real PRR = 0.95;
     const Real scrWid = 4, scrHeight = 4, scrZ = -1;
-    std::string savingPath = "./output.ppm";
+    std::string savingPath;
     bool enableDisplayProcess = true; ///< whether to display the rendering process
     bool enableLogOutputs = false; ///< whether to output the rendering log
     // many more to be added
   };
  public:
-  Spectrum render() const override;
+  void render(Scene* scene) const override;
 };
 }
 #endif //RENDERCRAFT_INTEGRATOR_H

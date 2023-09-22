@@ -19,16 +19,21 @@ using glm::distance;
 using glm::inverse;
 using glm::transpose;
 using glm::normalize;
+using glm::length;
+using glm::refract;
 inline Real distSqr(const Vec3 &A, const Vec3 &B) { return dot(A - B, A - B); }
 Vec3 uniformSampleSphere() {
 
 }
-
+Vec3 cosWeightedSampleHemisphere() {
+    
+}
 Mat3 constructFrame(const Vec3 &N) {
 
 }
 
 inline Real geometry(const Patch &A, const Patch &B) { return std::max(-dot(A.n, B.n), 0.0) / distSqr(A.p, B.p); }
+template<typename T>
+inline T lerp(const T &A, const T &B, Real t) { return A * (1 - t) + B * t; }
 }
-
 #endif //RENDERCRAFT_RD_MATHS_H

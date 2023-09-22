@@ -5,22 +5,22 @@
 #include <vector>
 namespace rdcraft {
 class Primitive;
-struct BVHNode
-{
+struct BVHNode {
   AABB bbox;
   BVHNode() = default;
-  BVHNode* lch = nullptr, *rch = nullptr;
+  BVHNode *lch = nullptr, *rch = nullptr;
   std::shared_ptr<Primitive> pr = nullptr;
 };
-class BVH
-{
- public:
-  bool intersect(const Ray&, SurfaceRecord *pRec) const;
-  bool intersect(const Ray&) const;
+class BVH {
+public:
+  BVH(const std::vector<std::shared_ptr<Primitive>> &primitives);
+  bool intersect(const Ray &, SurfaceRecord *pRec) const;
+  bool intersect(const Ray &) const;
   AABB getAABB() const { return rt->bbox; }
- private:
+
+private:
   enum { ByIndex } divStrategy;
-  BVHNode* rt;
+  BVHNode *rt;
 };
-}
+} // namespace rdcraft
 #endif

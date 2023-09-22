@@ -6,8 +6,11 @@
 #include <Core/maths.h>
 #include <Core/Record.h>
 #include <Core/Primitive.h>
+#include <Core/Scene.h>
+#include <iostream>
+#include <fstream>
 namespace rdcraft {
-Spectrum PathTracer::nextEventEst(const SurfaceRecord &bRec) const {
+Spectrum PathTracer::nextEventEst(const SurfaceRecord &bRec, Scene* scene) const {
   int neeDep = 0;
   Real pdfLight;
   Vec3 pos = bRec.pos;
@@ -18,11 +21,11 @@ Spectrum PathTracer::nextEventEst(const SurfaceRecord &bRec) const {
   Vec3 lightPos = pn.p;
   pdfLight *= pdfLightPoint;
   Vec3 toLight = lightPos - pos;
-  Real t = toLight.norm();
+  Real t = length(toLight);
   toLight /= t;
   Ray neeRay(pos, toLight);
   Spectrum L_nee(1.0);
-  if (scene->testVisibility(pos, lightPos)) {
+  if (testVisibility(pos, lightPos, scene)) {
     L_nee += light->evalEmission(pn, -toLight) / pdfLight;
     // TODO: Finish NEE with MIS here
   }
@@ -33,7 +36,7 @@ Spectrum PathTracer::L(const Ray& ray, Scene* scene) const {
   Spectrum L;
   Vec3 wo = ray.dir;
   for (int bounce = 0;; bounce++) {
-    if (get_random() > opt.PRR) break;
+    if (randomReal() > opt.PRR) break;
     SurfaceRecord rec;
     if (!(scene->pr->intersect(ray, &rec)) || rec.pr->isLight()) {
       if (bounce) {
@@ -42,7 +45,9 @@ Spectrum PathTracer::L(const Ray& ray, Scene* scene) const {
         if (scene->envMap)
           L += scene->envMap->evalEmission(wo);
         else {
-          L += rec.pr->getLight()->evalEmission();
+          // L += rec.pr->getLight()->evalEmission();
+          // TODO: implement MIS for direct light here
+          break;
         }
       }
     }
@@ -54,7 +59,7 @@ Spectrum PathTracer::L(const Ray& ray, Scene* scene) const {
     const Vec3 &P = rec.pos;
     Real pdf;
     Vec3 wi = mat->sample(wo, &pdf, uv);
-    L += throughput * nextEventEst(rec);
+    L += throughput * nextEventEst(rec, scene);
     if (!(scene->pr->intersect(Ray(P, wi)))) {
       Spectrum dir_rad = scene->envMap->evalEmission(wi);
       Real cosThetaI = std::abs(wi.z);
@@ -71,7 +76,36 @@ Spectrum PathTracer::L(const Ray& ray, Scene* scene) const {
 }
 
 // TODO: Implement volumetric path tracing
-Spectrum VolumePathTracer::render() const {
-
-}
+void PathTracer::render(Scene* scene) const {
+  std::fstream result(opt.savingPath, std::ios_base::out);
+    result << "P3" << std::endl << scene->camera->nx << " " << scene->camera->ny << std::endl << 255 << std::endl;
+    for (int j = static_cast<int>(scene->camera->ny) - 1; j >= 0; j--) {
+      for (int i = 0; i < scene->camera->nx; i++) {
+        Vec3 radiance;
+        Ray ray;
+        for (int k = 0; k < opt.spp; k++) {
+          Vec2 offset = scene->camera->filter->sample();
+          const Real rx = (i + offset[0]) * opt.scrWid / scene->camera->nx - opt.scrWid * 0.5;
+          const Real ry = (j + offset[1]) * opt.scrHeight / scene->camera->ny - opt.scrHeight * 0.5;
+          scene->camera->castRay(Vec3(rx, ry, -opt.scrZ), &ray);
+          radiance += L(ray, scene) / scene->camera->filter->pdfSample(offset.x, offset.y);
+        }
+        radiance /= static_cast<Real>(opt.spp);
+        if (radiance[0] >= 1.0) radiance[0] = 1.0;
+        if (radiance[1] >= 1.0) radiance[1] = 1.0;
+        if (radiance[2] >= 1.0) radiance[2] = 1.0;
+        radiance[0] = std::sqrt(radiance[0]);
+        radiance[1] = std::sqrt(radiance[1]);
+        radiance[2] = std::sqrt(radiance[2]);
+        result << int(radiance[0] * 255.99) << " " << int(radiance[1] * 255.99) << " " << int(radiance[2] * 255.99)
+              << std::endl;
+      }
+      if (opt.enableDisplayProcess) {
+        fflush(stdout);
+        printf("%.2lf %% rendered\n", static_cast<Real>(scene->camera->ny - j) * 100.0 / scene->camera->ny);
+      }
+    }
+    fflush(stdout);
+    printf("Finish rendering\n");
+  }
 }

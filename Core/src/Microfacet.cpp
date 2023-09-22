@@ -38,8 +38,8 @@ Real TrowbridgeModel::ShadowMasking(Real cosThetaI, Real cosThetaO, const Vec2& 
 ///sampleVisiblePoint a half-vector on the hemisphere
 Vec3 TrowbridgeModel::ImportanceSample(Real *pdf_inv, const Vec2& uv) const
 {
-  Real Phi = get_random() * PI2;
-  Real tmp = get_random();
+  Real Phi = randomReal() * PI2;
+  Real tmp = randomReal();
   Real Alpha = alpha->eval(uv);
   Real alphaSqr = Alpha * Alpha;
   Real cosThetaSqr = (1.0 - tmp) / (tmp * (alphaSqr - 1.0) + 1.0);

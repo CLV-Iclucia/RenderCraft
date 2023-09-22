@@ -3,8 +3,8 @@
 //
 #ifndef RENDERCRAFT_SHAPE_H
 #define RENDERCRAFT_SHAPE_H
+#include <memory>
 #include <utility>
-
 #include <Core/Ray.h>
 #include <Core/Transform.h>
 #include <Core/core.h>

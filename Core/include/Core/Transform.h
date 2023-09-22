@@ -7,10 +7,11 @@
 #include <Core/core.h>
 #include <utility>
 #include <Core/maths.h>
+#include <Core/Ray.h>
 
 namespace rdcraft {
 struct Transform {
-  Mat3 rot = Mat3::identity();
+  Mat3 rot;
   Real scale = 1.0; ///< Use a real for scale so that this is a conformal map
   Vec3 translate{0.0, 0.0, 0.0};
   Transform() = default;

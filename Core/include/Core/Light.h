@@ -1,9 +1,8 @@
 #ifndef RENDERCRAFT_LIGHT_H
 #define RENDERCRAFT_LIGHT_H
 
-#include "Shape.h"
-#include "Spectrums.h"
-#include "core.h"
+#include <Core/Spectrums.h>
+#include <Core/Shape.h>
 #include <memory>
 
 namespace rdcraft {
@@ -24,7 +23,7 @@ class AreaLight : public Light {
   Spectrum radiance;
  public:
   Spectrum evalEmission(const Patch &pn, const Vec3 &wo) const override {
-    return glm::dot(wo, pn.n) > 0.0 ? radiance : Spectrum();
+    return dot(wo, pn.n) > 0.0 ? radiance : Spectrum();
   }
   Real pdfSample(const Patch &pn, const Vec3 &ref) const override { return shape->pdfSample(pn.p, ref); }
 };

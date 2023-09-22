@@ -6,8 +6,9 @@
 #define RENDERCRAFT_CORE_INCLUDE_CORE_RAND_GEN_H_
 #include <Core/core.h>
 namespace rdcraft {
-Real get_random();
-Real random_int();
+Real randomReal();
+Real randomReal(Real l, Real r);
+int randomInt(int l, int r);
 }
 
 #endif //RENDERCRAFT_CORE_INCLUDE_CORE_RAND_GEN_H_
