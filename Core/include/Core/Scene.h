@@ -19,8 +19,7 @@ class Integrator;
 struct Scene {
   std::unique_ptr<Camera> camera;
   Aggregate *pr;
-  std::shared_ptr<EnvMap> envMap = nullptr;
-  std::shared_ptr<Integrator> integrator;
+  std::unique_ptr<EnvMap> envMap = nullptr;
   std::vector<AreaLight *> areaLights;
   std::vector<Medium> media;
   void render(); ///< compute the radiance of pixel (x, y)

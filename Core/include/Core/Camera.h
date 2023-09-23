@@ -14,6 +14,7 @@ struct Camera {
   uint nx, ny;
   Vec3 pos;
   Vec3 dir;
+  Real scrWid = 4, scrHeight = 4, scrZ = -1;
   std::unique_ptr<Filter> filter;
   void castRay(const Vec3 &ray_dir, Ray *ray) const {
     ray->orig = pos;
