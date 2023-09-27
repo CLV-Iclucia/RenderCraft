@@ -23,9 +23,9 @@ class Integrator {
 class PathTracer final : public Integrator {
  private:
   struct RenderOptions {
-    uint spp = 256;
     Real PRR = 0.95;
     int maxDepth = -1;
+    int rrDepth = 5;
     std::string savingPath = "./output.ppm";
     int threadNum = 1;
     bool enableDisplayProcess = true; ///< whether to display the rendering process
@@ -42,8 +42,8 @@ class PathTracer final : public Integrator {
   void setThreadNum(int threadNum) {
     opt.threadNum = threadNum;
   }
-  void setSamplesPerPixel(uint spp) {
-    opt.spp = spp;
+  void setRRDepth(int rrDepth) {
+    opt.rrDepth = rrDepth;
   }
   Spectrum L(const Ray&, Scene* scene) const;
   void render(Scene* scene) const override;

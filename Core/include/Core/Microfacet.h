@@ -1,7 +1,6 @@
 #ifndef RENDERCRAFT_MICROFACET_H
 #define RENDERCRAFT_MICROFACET_H
 #include <utility>
-
 #include <Core/Texture.h>
 namespace rdcraft {
 struct Microfacet

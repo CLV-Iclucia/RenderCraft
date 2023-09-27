@@ -22,6 +22,10 @@ class Shape {
 
  public:
   Shape() = default;
+  // implement some constructors
+  Shape(std::shared_ptr<Transform> World2Obj,
+        std::shared_ptr<Transform> Obj2World)
+      : World2Obj(std::move(World2Obj)), Obj2World(std::move(Obj2World)) {}
   /**
    * sample a point on the surface of the shape given the position of the shape
    * @return the coordinates of the sample point

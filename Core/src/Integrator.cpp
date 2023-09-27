@@ -55,27 +55,23 @@ Spectrum PathTracer::L(const Ray& ray, Scene* scene) const {
     Mat3 TBN = constructFrame(rec.normal);
     wo = -ray.dir;
     wo = TBN * wo;
-    const Vec2 &uv = rec.uv;
-    const Vec3 &P = rec.pos;
     Real pdf;
-    Vec3 wi = mat->sample(wo, &pdf, uv);
+    Vec3 wi = mat->sample(rec, wo, &pdf);
     L += throughput * nextEventEst(rec, scene);
-    if (!(scene->pr->intersect(Ray(P, wi)))) {
+    if (!(scene->pr->intersect(Ray(rec.pos, wi)))) {
       Spectrum dir_rad = scene->envMap->evalEmission(wi);
       Real cosThetaI = std::abs(wi.z);
-      L += throughput * mat->BxDF(wi, wo, uv) * cosThetaI * dir_rad / pdf;
+      L += throughput * mat->BxDF(rec, wo, wi) * cosThetaI * dir_rad / pdf;
     }
-
-    wi = mat->sample(wo, &pdf, uv);
+    wi = mat->sample(rec, wo, &pdf);
     wi = inverse(TBN) * wi;
     const Real cosThetaI = std::abs(wi[2]);
-    throughput *= mat->BxDF(wi, wo, uv) / pdf * cosThetaI / opt.PRR;
+    throughput *= mat->BxDF(rec, wo, wi) / pdf * cosThetaI / opt.PRR;
     wo = wi;
   }
   return L;
 }
 
-// TODO: Implement volumetric path tracing
 void PathTracer::render(Scene* scene) const {
   std::fstream result(opt.savingPath, std::ios_base::out);
     result << "P3" << std::endl << scene->camera->nx << " " << scene->camera->ny << std::endl << 255 << std::endl;

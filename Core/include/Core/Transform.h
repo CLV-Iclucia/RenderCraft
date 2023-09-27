@@ -11,26 +11,16 @@
 
 namespace rdcraft {
 struct Transform {
-  Mat3 rot;
-  Real scale = 1.0; ///< Use a real for scale so that this is a conformal map
-  Vec3 translate{0.0, 0.0, 0.0};
-  Transform() = default;
-  Transform(const Transform &_transform) = default;
-  Transform(Mat3 _rot, Real _scale, Vec3 _translate) : rot(_rot), scale(_scale), translate(std::move(_translate)) {}
-  explicit Transform(Mat3 _rot) : rot(_rot) {}
-  Transform inv() const { return {inverse(rot), 1.0 / scale, -inverse(rot) / scale * translate}; }
-  Vec3 invTrans(const Vec3 &v) const { return inverse(rot) / scale * (v - translate); };
-  Vec3 operator()(const Vec3 &v) const { return scale * rot * v + translate; }
-  Ray invTrans(const Ray &ray) const {
-    return {invTrans(ray.orig), invTrans(ray.dir)};
+  Mat4 trans; // one matrix to cover all kinds of transforms
+  Vec3 operator()(const Vec3& v) const {
+    // multiply the matrix with the vector
+    Vec4 v4(v.x, v.y, v.z, 1);
+    Vec4 result = trans * v4;
+    return Vec3(result.x, result.y, result.z);
   }
-  Ray operator()(const Ray &ray) const {
-    return {scale * rot * ray.orig + translate, scale * rot * ray.dir + translate};
+  Vec3 transNormal(const Vec3& v) const {
+    
   }
-  Vec3 transNormal(const Vec3 &N) const { return rot * N; }
-  Vec3 invTransNormal(const Vec3 &N) const { return inverse(rot) * N; }
-  Real scaleDist(Real dis) const { return scale * dis; }
-  Real invScaleDist(Real dis) const { return dis / scale; }
 };
 }
 #endif //RENDERCRAFT_TRANSFORM_H

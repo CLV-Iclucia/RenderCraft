@@ -7,8 +7,7 @@
 #include <Core/Spectrums.h>
 namespace rdcraft {
 struct Medium {
-  bool isVolume = false;
-  Real eta = 1.0;
+  
 };
 struct MediumInterface {
   int internal_id = -1;

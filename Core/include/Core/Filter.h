@@ -18,6 +18,7 @@ class BoxFilter : public Filter {
 public:
   BoxFilter(Real window_x, Real window_y) : window_x(window_x), window_y(window_y) {}
   BoxFilter(Vec2 window) : window_x(window.x), window_y(window.y) {}
+  BoxFilter(Real window) : window_x(window), window_y(window) {}
   Vec2 sample() const override {
     return Vec2(randomReal() * window_x - window_x * 0.5,
             randomReal() * window_y - window_y * 0.5);
@@ -30,7 +31,17 @@ private:
 };
 
 class GaussianFilter : public Filter {
-
+  public:
+    GaussianFilter(Real window_x, Real window_y) : window_x(window_x), window_y(window_y) {}
+    GaussianFilter(Vec2 window) : window_x(window.x), window_y(window.y) {}
+    GaussianFilter(Real window) : window_x(window), window_y(window) {}
+  private:
+  // TODO: implement this!
+    Vec2 sample() const override {
+    }
+    Real pdfSample(Real x, Real y) const override {
+    }
+    Real window_x = 0.0, window_y = 0.0;
 };
 } // namespace rdcraft
 #endif // RENDERCRAFT_FILTER_H

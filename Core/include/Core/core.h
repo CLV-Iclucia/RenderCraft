@@ -11,9 +11,11 @@ namespace rdcraft {
 using uint = unsigned int;
 using Real = double;
 using Mat3 = glm::highp_mat3;
+using Mat4 = glm::highp_mat4;
 using Vec2f = glm::vec2;
 using Vec2 = glm::highp_vec2;
 using Vec3 = glm::highp_vec3;
+using Vec4 = glm::highp_vec4;
 using Vec3b = glm::bvec3;
 using Vec3f = glm::vec3;
 using Vec3i = glm::ivec3;
