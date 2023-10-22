@@ -13,7 +13,7 @@ struct BVHNode {
 };
 class BVH {
 public:
-  BVH(const std::vector<std::shared_ptr<Primitive>> &primitives);
+  BVH(const std::vector<std::unique_ptr<Primitive>> &primitives);
   bool intersect(const Ray &, SurfaceRecord *pRec) const;
   bool intersect(const Ray &) const;
   AABB getAABB() const { return rt->bbox; }

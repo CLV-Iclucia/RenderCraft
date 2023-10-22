@@ -11,15 +11,27 @@
 
 namespace rdcraft {
 struct Transform {
-  Mat4 trans; // one matrix to cover all kinds of transforms
+  Mat4 trans; // one matrix to rule them all
+  Transform() = default;
+  explicit Transform(const Mat4& mat) : trans(mat) {}
   Vec3 operator()(const Vec3& v) const {
-    // multiply the matrix with the vector
     Vec4 v4(v.x, v.y, v.z, 1);
     Vec4 result = trans * v4;
     return Vec3(result.x, result.y, result.z);
   }
+  Vec3 apply(const Vec3& v) const {
+    Vec4 v4(v.x, v.y, v.z, 1);
+    Vec4 result = trans * v4;
+    return Vec3(result.x, result.y, result.z);
+  }
+  Ray apply(const Ray& ray) const {
+
+  }
+  Transform inverse() const {
+    return Transform();
+  }
   Vec3 transNormal(const Vec3& v) const {
-    
+    return v;
   }
 };
 }

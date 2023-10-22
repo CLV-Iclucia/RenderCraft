@@ -23,7 +23,7 @@ bool Sphere::intersect(const Ray &ray, SurfaceRecord *pRec) const {
 }
 
 bool Sphere::intersect(const Ray &ray) const {
-  Ray objRay = World2Obj->operator()(ray);
+  Ray objRay = World2Obj->apply(ray);
   Vec3 dif = objRay.orig;
   Real B = dot(dif, objRay.dir);
   Real C = dot(dif, dif) - R * R;

@@ -27,17 +27,16 @@ public:
 
 class GeometryPrimitive : public Primitive {
 private:
-  std::shared_ptr<Shape> shape;
+  std::unique_ptr<Shape> shape; // all shapes are managed by Primitives!
   std::variant<Material *, Light *> surface;
   MediumInterface interface {-1, -1};
   
-
 public:
-  GeometryPrimitive(std::shared_ptr<Shape> shape, Material *material,
+  GeometryPrimitive(std::unique_ptr<Shape> shape, Material *material,
                     MediumInterface interface)
       : shape(std::move(shape)), surface(material), interface(interface) {}
   // implement some constructor with default interface
-  GeometryPrimitive(std::shared_ptr<Shape> shape, Material *material)
+  GeometryPrimitive(std::unique_ptr<Shape> shape, Material *material)
       : shape(std::move(shape)), surface(material) {}
   /**
    * forward the intersection request to the shape
@@ -59,24 +58,28 @@ public:
     return std::get<Material *>(surface);
   }
   Light *getLight() const override { return std::get<Light *>(surface); }
+  AABB getAABB() const override {
+    return shape->getAABB();
+  }
 };
 
 class TransformedPrimitive : Primitive {
 private:
-  std::shared_ptr<Primitive> pr;
-  Transform World2Pr, Pr2World;
+  Primitive* pr;
+  Transform* World2Pr;
+  Transform* Pr2World;
 
 public:
   bool intersect(const Ray &ray, SurfaceRecord *pRec) const override {
-    bool hasIntersection = pr->intersect(World2Pr(ray), pRec);
+    bool hasIntersection = pr->intersect(World2Pr->apply(ray), pRec);
     if (hasIntersection) {
-      pRec->normal = Pr2World.transNormal(pRec->normal);
-      pRec->pos = Pr2World(pRec->pos);
+      pRec->normal = Pr2World->transNormal(pRec->normal);
+      pRec->pos = Pr2World->apply(pRec->pos);
     }
     return hasIntersection;
   }
   bool intersect(const Ray &ray) const override {
-    return pr->intersect(World2Pr(ray));
+    return pr->intersect(World2Pr->apply(ray));
   }
   Material *getMaterial() const override { return pr->getMaterial(); }
   Light *getLight() const override { return pr->getLight(); }
@@ -85,10 +88,11 @@ public:
 
 class Aggregate : public Primitive {
 private:
-  std::vector<Primitive *> primitives;
-  std::shared_ptr<BVH> bvh;
+  std::unique_ptr<BVH> bvh;
 
 public:
+  Aggregate(const std::vector<std::unique_ptr<Primitive>> &primitives)
+      : bvh(std::make_unique<BVH>(primitives)) {}
   Material *getMaterial() const override {
     ERROR("function shouldn't be called.");
   }

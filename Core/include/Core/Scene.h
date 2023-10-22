@@ -1,5 +1,6 @@
 ﻿#ifndef RENDERCRAFT_SCENE_H
 #define RENDERCRAFT_SCENE_H
+#include "Core/Transform.h"
 #include <Core/Medium.h>
 #include <vector>
 #include <Core/Record.h>
@@ -11,17 +12,27 @@
 #include <Core/EnvMap.h>
 #include <Core/Filter.h>
 #include <Core/Camera.h>
-#include <Core/Primitive.h>
 #include <Core/maths.h>
 #include <Core/Medium.h>
+#include <Core/Primitive.h>
+#include <Core/Texture.h>
+#include <Core/Mesh.h>
 namespace rdcraft {
 class Integrator;
+// resource management: shapes are managed by Primitives
+// others are directly managed by Scene using unique_ptr and STL
+// Textures are somewhat difficult to handle, for now we directly instantiate Texture<Vec3> and Texture<Real>
+// we can do this because almost all the objects live as long as Scene
 struct Scene {
   std::unique_ptr<Camera> camera;
-  Aggregate *pr;
-  std::unique_ptr<EnvMap> envMap = nullptr;
-  std::vector<AreaLight *> areaLights;
+  std::unique_ptr<Aggregate> pr;
+  std::unique_ptr<EnvMap> envMap;
+  std::vector<AreaLight> areaLights;
+  std::vector<std::unique_ptr<Primitive>> primitives; // used for resource management
+  std::vector<std::unique_ptr<Material>> materials;
+  std::vector<Transform> transforms;
   std::vector<Medium> media;
+  std::vector<Mesh> meshes;
   void render(); ///< compute the radiance of pixel (x, y)
   Light *sampleLight(Real *pdf) const {
     // TODO: implement this!
@@ -30,25 +41,9 @@ struct Scene {
     // TODO: implement this!
   }
   Real getExternalRefractionRate(MediumInterface interface) {
-    return interface.external_id == -1 ? 1.0 : 1.0 / media[interface.external_id].eta;
   }
   Real getInternalRefractionRate(MediumInterface interface) {
-    return interface.internal_id == -1 ? 1.0 : 1.0 / media[interface.internal_id].eta;
   }
 };
-
-struct Visibility {
-  Vec3 a;
-  Vec3 b;
-  bool test(Scene* scene) {
-    Ray test_ray(a, normalize(b - a));
-    return !scene->pr->intersect(test_ray);
-  }
-};
-
-static inline bool testVisibility(const Vec3& a, const Vec3& b, Scene* scene) {
-    Ray test_ray(a, normalize(b - a));
-    return !scene->pr->intersect(test_ray);
-}
 }
 #endif

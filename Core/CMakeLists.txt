@@ -5,7 +5,8 @@ add_library(Core ${srcs}
         include/Core/rand-gen.h
         src/rand-gen.cpp
         src/scene-parser.cpp
-        include/Core/rdcraft.h)
+        include/Core/rdcraft.h
+        apps/obj-previewer.cc)
 add_executable(rdcraft src/main.cpp)
 target_include_directories(Core PUBLIC include)
 target_include_directories(Core PUBLIC ${RENDERCRAFT_EXTERNAL}/glm)

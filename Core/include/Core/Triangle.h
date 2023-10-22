@@ -12,12 +12,10 @@ struct Triangle : public Shape {
   bool intersect(const Ray &ray) const override;
   AABB getAABB() const override;
   Real pdfSample(const Vec3 &p) const override;
-  Real pdfSample(const Vec3 &p, const Vec3 &ref) const override;
   int v[3];
   int uv[3];
   int n[3];
-  std::shared_ptr<Mesh> mesh =
-      nullptr; ///< the mesh that the triangle belongs to
+  Mesh* mesh = nullptr; ///< the mesh that the triangle belongs to
 };
 } // namespace rdcraft
 #endif

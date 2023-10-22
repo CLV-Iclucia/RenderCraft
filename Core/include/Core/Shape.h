@@ -17,15 +17,15 @@ class SurfaceRecord;
  * */
 class Shape {
  protected:
-  std::shared_ptr<Transform> World2Obj;
-  std::shared_ptr<Transform> Obj2World;
+  Transform* World2Obj;
+  Transform* Obj2World;
 
  public:
   Shape() = default;
   // implement some constructors
-  Shape(std::shared_ptr<Transform> World2Obj,
-        std::shared_ptr<Transform> Obj2World)
-      : World2Obj(std::move(World2Obj)), Obj2World(std::move(Obj2World)) {}
+  Shape(Transform* World2Obj_,
+        Transform* Obj2World_)
+      : World2Obj(World2Obj_), Obj2World(Obj2World_) {}
   /**
    * sample a point on the surface of the shape given the position of the shape
    * @return the coordinates of the sample point
@@ -44,7 +44,6 @@ class Shape {
    * @return the are of the surface of the shape
    */
   virtual Real pdfSample(const Vec3 &p) const = 0;
-  virtual Real pdfSample(const Vec3 &p, const Vec3 &ref) const = 0;
   virtual ~Shape() = default;
 };
 }

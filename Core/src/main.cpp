@@ -13,4 +13,5 @@ int main(int argc, char** argv) {
   }
   const char* scene_path = argv[1];
   auto [scene, integrator] = loadScene(scene_path);
+  integrator->render(scene.get());
 }

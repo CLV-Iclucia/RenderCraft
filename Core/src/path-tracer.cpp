@@ -10,6 +10,11 @@
 #include <iostream>
 #include <fstream>
 namespace rdcraft {
+
+static inline bool testVisibility(const Vec3& a, const Vec3& b, Scene* scene) {
+    Ray test_ray(a, normalize(b - a));
+    return !scene->pr->intersect(test_ray);
+}
 Spectrum PathTracer::nextEventEst(const SurfaceRecord &bRec, Scene* scene) const {
   int neeDep = 0;
   Real pdfLight;
@@ -17,7 +22,7 @@ Spectrum PathTracer::nextEventEst(const SurfaceRecord &bRec, Scene* scene) const
   Vec3 normal = bRec.normal;
   Light *light = scene->sampleLight(&pdfLight);
   Real pdfLightPoint;
-  Patch pn = light->sample(pos, &pdfLightPoint);
+  Patch pn = light->sample(&pdfLightPoint);
   Vec3 lightPos = pn.p;
   pdfLight *= pdfLightPoint;
   Vec3 toLight = lightPos - pos;
@@ -79,14 +84,13 @@ void PathTracer::render(Scene* scene) const {
       for (int i = 0; i < scene->camera->nx; i++) {
         Vec3 radiance;
         Ray ray;
-        for (int k = 0; k < opt.spp; k++) {
+        for (int k = 0; k < scene->camera->spp; k++) {
           Vec2 offset = scene->camera->filter->sample();
-          const Real rx = (i + offset[0]) * opt.scrWid / scene->camera->nx - opt.scrWid * 0.5;
-          const Real ry = (j + offset[1]) * opt.scrHeight / scene->camera->ny - opt.scrHeight * 0.5;
-          scene->camera->castRay(Vec3(rx, ry, -opt.scrZ), &ray);
-          radiance += L(ray, scene) / scene->camera->filter->pdfSample(offset.x, offset.y);
+          uint scrWidth = scene->camera->nx, scrHeight = scene->camera->ny;
+          //scene->camera->castRay(Vec3(rx, ry, -opt.scrZ), &ray);
+          //radiance += L(ray, scene) / scene->camera->filter->pdfSample(offset.x, offset.y);
         }
-        radiance /= static_cast<Real>(opt.spp);
+        radiance /= static_cast<Real>(scene->camera->spp);
         if (radiance[0] >= 1.0) radiance[0] = 1.0;
         if (radiance[1] >= 1.0) radiance[1] = 1.0;
         if (radiance[2] >= 1.0) radiance[2] = 1.0;
