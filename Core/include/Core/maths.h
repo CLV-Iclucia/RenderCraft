@@ -22,18 +22,35 @@ using glm::transpose;
 using glm::normalize;
 using glm::length;
 using glm::refract;
-using glm::cross;
 using glm::clamp;
 using glm::translate;
 using glm::rotate;
 using glm::scale;
+
+template <typename T>
+static inline T cross(const T& a, const T& b) {
+  return glm::cross(b, a);
+}
+
 inline Real distSqr(const Vec3 &A, const Vec3 &B) { return dot(A - B, A - B); }
+
+template <typename T>
+static inline T epsilon() {
+  if constexpr (std::is_same_v<T, Real>)
+    return 1e-9;
+  else if constexpr (std::is_same_v<T, float>)
+    return 1e-5;
+  else return static_cast<T>(0);
+}
+
 Vec3 uniformSampleSphere() {
 
 }
+
 Vec3 cosWeightedSampleHemisphere() {
-    
+
 }
+
 Mat3 constructFrame(const Vec3 &N) {
 
 }
@@ -41,15 +58,33 @@ Mat3 constructFrame(const Vec3 &N) {
 inline Real geometry(const Patch &A, const Patch &B) { return std::max(-dot(A.n, B.n), 0.0) / distSqr(A.p, B.p); }
 template<typename T>
 inline T lerp(const T &A, const T &B, Real t) { return A * (1 - t) + B * t; }
+
 // bilerp
 template<typename T>
 inline T bilerp(const T &A, const T &B, const T &C, const T &D, Real u, Real v) {
-    return lerp(lerp(A, B, u), lerp(C, D, u), v);
+  return lerp(lerp(A, B, u), lerp(C, D, u), v);
 }
+
 // trilerp
 template<typename T>
-inline T trilerp(const T &A, const T &B, const T &C, const T &D, const T &E, const T &F, const T &G, const T &H, Real u, Real v, Real w) {
-    return lerp(bilerp(A, B, C, D, u, v), bilerp(E, F, G, H, u, v), w);
+inline T trilerp(const T &A, const T &B, const T &C, const T &D, const T &E,
+                 const T &F, const T &G, const T &H, Real u, Real v, Real w) {
+  return lerp(bilerp(A, B, C, D, u, v), bilerp(E, F, G, H, u, v), w);
 }
+
+template<typename T>
+inline bool equal(const T &a, const T &b) {
+  return std::abs(a - b) < epsilon<T>();
+}
+
+inline AABB mergeAABB(const AABB &lhs, const AABB &rhs) {
+  return {Vec3(std::min(lo(lhs).x, lo(rhs).x),
+               std::min(lo(lhs).y, lo(rhs).y),
+               std::min(lo(lhs).z, lo(rhs).z)),
+          Vec3(std::max(hi(lhs).x, hi(rhs).x),
+               std::max(hi(lhs).y, hi(rhs).y),
+               std::max(hi(lhs).z, hi(rhs).z))};
+}
+
 }
 #endif //RENDERCRAFT_RD_MATHS_H

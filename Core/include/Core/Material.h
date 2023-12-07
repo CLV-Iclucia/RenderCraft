@@ -1,8 +1,8 @@
 #ifndef RENDERCRAFT_MATERIAL_H
 #define RENDERCRAFT_MATERIAL_H
-#include <Core/Medium.h>
+#include <Core/medium.h>
 #include <Core/Microfacet.h>
-#include <Core/Spectrums.h>
+#include <spectrums.h>
 #include <Core/core.h>
 #include <memory>
 #include <utility>
@@ -16,15 +16,15 @@ struct Material {
 class Lambertian : public Material {
   // Lambertian diffuse
 public:
-  explicit Lambertian(std::shared_ptr<Texture<Spectrum>> _albedo)
+  explicit Lambertian(std::unique_ptr<Texture<Spectrum>> _albedo)
       : albedo(std::move(_albedo)) {}
   explicit Lambertian(const Spectrum &col)
-      : albedo(std::make_shared<ConstantTexture<Spectrum>>(col)) {}
+      : albedo(std::make_unique<ConstantTexture<Spectrum>>(col)) {}
   Vec3 sample(const SurfaceRecord &, const Vec3 &, Real *) const override;
   Vec3 BxDF(const SurfaceRecord &, const Vec3 &, const Vec3 &) const override;
 
 private:
-  std::shared_ptr<Texture<Spectrum>> albedo;
+  std::unique_ptr<Texture<Spectrum>> albedo;
 };
 class Metal : public Material {
   // using Torrance-Sparrow Model
@@ -39,21 +39,20 @@ public:
 
 private:
   Vec3 Fresnel(Real) const;
-  std::shared_ptr<Microfacet> surface =
+  std::unique_ptr<Microfacet> surface =
       nullptr; // surface = nullptr means that the surface is smooth
   Vec3 eta, k; // /bar{eta} = eta + ik according to PBR
 };
 
-// this class in fact describe a surface between two translucent media
 class Dieletrics : public Material {
   // translucent dielectrics
 public:
   Vec3 sample(const SurfaceRecord &, const Vec3 &, Real *) const override;
   Vec3 BxDF(const SurfaceRecord &, const Vec3 &, const Vec3 &) const override;
 
-private:
-  std::shared_ptr<Texture<Spectrum>> color;
-  std::shared_ptr<Microfacet> surface = nullptr;
+protected:
+  std::unique_ptr<Texture<Spectrum>> color;
+  std::unique_ptr<Microfacet> surface = nullptr;
   // TODO: I think this should be handled with care
   Real refraction_rate = 1.0;
 };

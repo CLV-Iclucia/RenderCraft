@@ -1,18 +1,18 @@
 //
 // Created by creeper on 9/21/23.
 //
-#include <Core/Transform.h>
-#include <Core/Integrator.h>
+#include <Core/transform.h>
+#include <Core/integrators.h>
 #include <Core/Material.h>
-#include <Core/Mesh.h>
-#include <Core/Primitive.h>
-#include <Core/Spectrums.h>
+#include <Core/mesh.h>
+#include <Core/primitive.h>
+#include <Core/spectrums.h>
 #include <Core/Sphere.h>
 #include <Core/maths.h>
 #include <Core/obj-loader.h>
 #include <Core/scene-parser.h>
+#include <Core/light.h>
 #include <algorithm>
-#include <cstddef>
 #include <cstring>
 #include <iostream>
 #include <map>
@@ -21,11 +21,12 @@
 namespace rdcraft {
 
 static std::map<std::string, Material*> material_ref;
-static std::map<std::string, std::unique_ptr<Light>> light_ref;
-static std::vector<AreaLight> lights;
-static std::vector<std::unique_ptr<Material>> materials;
-static std::vector<std::unique_ptr<Primitive>> primitives;
-static std::vector<Transform> transforms;
+static std::map<std::string, Light*> light_ref;
+static MemoryPool<AreaLight> area_lights;
+static MemoryManager<Light> lights;
+static MemoryManager<Material> materials;
+static MemoryManager<Primitive> primitives;
+static MemoryPool<Transform> transforms;
 
 // implement a function that splits a string by a given regex
 std::vector<std::string> split(const std::string &str, const std::regex &re) {
@@ -100,13 +101,11 @@ Transform* parseTransform(pugi::xml_node transform) {
       exit(-1);
     }
   }
-  transforms.emplace_back(mat);
-  return transforms.data() + transforms.size() - 1;
+  return transforms.construct(mat);
 }
 
 Transform* invTransform(Transform* transform) {
-  transforms.emplace_back(transform->inverse());
-  return transforms.data() + transforms.size() - 1;
+  return transforms.construct<Transform>(transform->inverse());
 }
 
 std::unique_ptr<Integrator> parseIntegrator(pugi::xml_node integrator) {
@@ -118,9 +117,9 @@ std::unique_ptr<Integrator> parseIntegrator(pugi::xml_node integrator) {
          integer = integer.next_sibling("integer")) {
       std::string name = integer.attribute("name").value();
       if (name == "maxDepth") {
-        path_tracer->setMaxDepth(integer.attribute("value").as_int());
+        path_tracer->opt.maxDepth = integer.attribute("value").as_int();
       } else if (name == "rrDepth") {
-        path_tracer->setRRDepth(integer.attribute("value").as_int());
+        path_tracer->opt.maxDepth = integer.attribute("value").as_int();
       } else {
         std::cout << "Unknown integer attribute: " << name << std::endl;
         exit(-1);
@@ -242,20 +241,19 @@ Spectrum parseSpectrum(pugi::xml_node spectrum) {
   }
 }
 
-void parseMaterial(pugi::xml_node bsdf) {
+Material* parseMaterial(pugi::xml_node bsdf) {
   std::string bsdf_type = bsdf.attribute("type").value();
-  std::unique_ptr<Material> material;
+  Material* material;
   if (bsdf_type == "diffuse") {
     pugi::xml_node spectrum = bsdf.child("spectrum");
     if (spectrum) {
-      material = std::make_unique<Lambertian>(parseSpectrum(spectrum));
+      material = materials.construct<Lambertian>(parseSpectrum(spectrum));
     } else {
       std::cout << "No spectrum for diffuse" << std::endl;
       exit(-1);
     }
   }
-  material_ref[bsdf.attribute("id").value()] = material.get();
-  materials.emplace_back(material);
+  material_ref[bsdf.attribute("id").value()] = material;
 }
 
 Spectrum parseSpectrum(const std::string &value) {
@@ -276,18 +274,18 @@ Spectrum parseSpectrum(const std::string &value) {
 
 std::unique_ptr<Shape> parseSphere(pugi::xml_node sphere) {
   Real radius;
-  Transform* Obj2World = parseTransform(sphere.child("transform"));
-  Transform* World2Obj = invTransform(Obj2World);
+  Transform* obj_to_world = parseTransform(sphere.child("transform"));
+  Transform* world_to_obj = invTransform(obj_to_world);
   radius = sphere.attribute("radius").as_float();
-  return std::make_unique<Sphere>(radius, World2Obj, Obj2World);
+  return std::make_unique<Sphere>(radius, world_to_obj, obj_to_world);
 }
 
-std::shared_ptr<Light> parseLight(pugi::xml_node emitter, const std::shared_ptr<Shape>& shape) {
+Light* parseLight(pugi::xml_node emitter, const Shape* shape) {
   std::string emitter_type = emitter.attribute("type").value();
   if (emitter_type == "area") {
     pugi::xml_node radiance = emitter.child("radiance");
     if (radiance) {
-      return std::make_shared<AreaLight>(shape, parseSpectrum(radiance));
+      return area_lights.construct(shape, parseSpectrum(radiance));
     } else {
       std::cout << "No radiance for area light" << std::endl;
       exit(-1);
@@ -300,7 +298,7 @@ std::shared_ptr<Light> parseLight(pugi::xml_node emitter, const std::shared_ptr<
 
 // in Mitsuba's scene format it is called shape
 // I follow PBRT's naming convention to call it primitive
-void parsePrimitive(pugi::xml_node primitive) {
+Primitive* parsePrimitive(pugi::xml_node primitive) {
   if (primitive.attribute("type").empty()) {
     std::cout << "No type for shape" << std::endl;
     exit(-1);
@@ -309,6 +307,7 @@ void parsePrimitive(pugi::xml_node primitive) {
   // if there is a ref child, then use the ref
   // it should only be a ref to a material
   // the id attribute can be used for looking up the material
+  Primitive* pr = nullptr;
   Material* material;
   if (primitive.child("ref")) {
     std::string ref = primitive.child("ref").attribute("id").value();
@@ -322,7 +321,7 @@ void parsePrimitive(pugi::xml_node primitive) {
     // use parseMaterial
     pugi::xml_node bsdf = primitive.child("bsdf");
     if (bsdf) {
-      parseMaterial(bsdf);
+      material = parseMaterial(bsdf);
       material = material_ref[bsdf.attribute("id").value()];
     } else {
       std::cout << "No bsdf for shape" << std::endl;
@@ -335,8 +334,7 @@ void parsePrimitive(pugi::xml_node primitive) {
 
   if (primitive_type == "sphere") {
     std::unique_ptr<Shape> sphere = parseSphere(primitive);
-    primitives.emplace_back(
-        std::make_unique<GeometryPrimitive>(sphere, material));
+    pr = primitives.construct<GeometryPrimitive>(std::move(sphere), material);
   } else if (primitive_type == "obj") {
     // find child of name "string", the "name" attribute should be "filename"
     // and the "value" attribute is the path relative to the file
@@ -355,7 +353,7 @@ void parsePrimitive(pugi::xml_node primitive) {
     loadObj(filename, mesh.get());
     // add all the triangles to the primitives
     for (auto &triangle : mesh->triangles)
-      primitives.push_back(std::make_unique<GeometryPrimitive>(triangle, material));
+      primitives.construct<GeometryPrimitive>(triangle, material);
   }
 }
 
@@ -395,10 +393,9 @@ loadScene(const char *file_path) {
               << ", using default config." << std::endl;
     integrator = std::make_unique<PathTracer>();
   }
-  scene->primitives = std::move(primitives);
   scene->materials = std::move(materials);
   scene->transforms = std::move(transforms);
-  scene->pr = std::make_unique<Aggregate>(scene->primitives);
+  scene->pr = std::make_unique<Aggregate>(primitives);
   return std::make_tuple(std::move(scene), std::move(integrator));
 }
 } // namespace rdcraft

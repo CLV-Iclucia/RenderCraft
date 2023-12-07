@@ -20,6 +20,19 @@ using Vec3b = glm::bvec3;
 using Vec3f = glm::vec3;
 using Vec3i = glm::ivec3;
 using AABB = std::tuple<Vec3, Vec3>;
+template <typename T, int Dim> struct TVector {
+  static_assert(Dim == 2 || Dim == 3 || Dim == 4, "Dim must be 2, 3 or 4");
+};
+template <typename T> struct TVector<T, 2> {
+  using type = glm::detail::tvec2<T>;
+};
+template <typename T> struct TVector<T, 3> {
+  using type = glm::detail::tvec3<T>;
+};
+template <typename T> struct TVector<T, 4> {
+  using type = glm::detail::tvec4<T>;
+};
+template <typename T, int Dim> using Vector = typename TVector<T, Dim>::type;
 inline Vec3& lo(AABB& aabb) {
   return std::get<0>(aabb);
 }
@@ -35,6 +48,11 @@ inline const Vec3& hi(const AABB& aabb) {
 struct Patch {
   Vec3 p;
   Vec3 n;
+};
+struct NonCopyable {
+  NonCopyable() = default;
+  NonCopyable(const NonCopyable&) = delete;
+  NonCopyable& operator=(const NonCopyable&) = delete;
 };
 }
 #endif //RENDERCRAFT_TYPES_H

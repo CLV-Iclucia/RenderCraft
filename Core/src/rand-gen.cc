@@ -2,7 +2,6 @@
 // Created by creeper on 9/21/23.
 //
 #include <Core/rand-gen.h>
-#include <cstdio>
 #include <random>
 namespace rdcraft {
 Real randomReal() {

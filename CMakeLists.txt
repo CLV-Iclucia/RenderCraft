@@ -5,6 +5,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(RENDERCRAFT_EXTERNAL "${PROJECT_SOURCE_DIR}/external")
 set(CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/external")
 
+find_package(TBB REQUIRED)
 add_subdirectory(${RENDERCRAFT_EXTERNAL}/pugixml)
+add_subdirectory(${RENDERCRAFT_EXTERNAL}/tinyobjloader)
+add_subdirectory(${RENDERCRAFT_EXTERNAL}/tinyexr)
+add_subdirectory(Spatify)
 add_subdirectory(Core)
-

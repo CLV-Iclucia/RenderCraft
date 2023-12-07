@@ -1,120 +1,84 @@
 #ifndef RENDERCRAFT_TEXTURE_H
 #define RENDERCRAFT_TEXTURE_H
 #include <Core/core.h>
-#include <Core/rand-gen.h>
+#include <Spatify/grids.h>
 #include <memory>
-/**
- * \brief All textures in RenderCraft are considered as <Core/distribution>.
- *        They describe the distribution of properties(roughness, normals,
- * colors, e.g.)
- */
 
 namespace rdcraft {
+using spatify::Grid;
 class TextureMapping {
-public:
-  virtual Vec2 map(Real x, Real y) const = 0;
+  public:
+    virtual Vec2 map(Real x, Real y) const = 0;
+    virtual ~TextureMapping() = default;
 };
 
 /**
  * @tparam T the type of the texture value.
  */
-template <typename T> class Texture {
-public:
-  virtual T eval(const Vec2 &) const = 0;
+template <typename T, int Dim>
+class Texture {
+  public:
+    virtual T eval(const Vector<Real, Dim>&) const = 0;
+    virtual ~Texture() = default;
 };
 
-template <typename T> class ConstantTexture : public Texture<T> {
-public:
-  explicit ConstantTexture(const T &_tex) : tex(_tex) {}
-  explicit ConstantTexture(T &&_tex) : tex(std::move(_tex)) {}
-  T eval(const Vec2 &) const override { return tex; }
+template <typename T, int Dim>
+class ConstantTexture : public Texture<T, Dim> {
+  public:
+    explicit ConstantTexture(const T& _tex)
+      : tex(_tex) {
+    }
+    explicit ConstantTexture(T&& _tex)
+      : tex(std::move(_tex)) {
+    }
+    T eval(const Vec2&) const override { return tex; }
 
-private:
-  T tex;
+  private:
+    T tex;
 };
 
-/**
- * By default, PerlinNoise describes a 2D-texture
- */
-template <typename T> class PerlinNoise : public Texture<T> {
-private:
-  uint m = 0, n = 0;
-  T *a = nullptr;
-  std::shared_ptr<Texture<T>> texA, texB;
+template <typename T, int Dim>
+class PerlinNoise : public Texture<T, Dim>, NonCopyable {
+  private:
+    std::unique_ptr<Grid<Real, Real, Dim>> grid = nullptr;
+    std::unique_ptr<Texture<T, Dim>> texA{}, texB{};
 
-public:
-  PerlinNoise(uint _width, uint _height) : m(_width), n(_height) {
-    a = new T[m * n];
-    for (int i = 0; i < m; i++)
-      for (int j = 0; j < n; j++)
-        a[i * m + j] = randomReal();
-  }
-  T eval(const Vec2 &uv) const override {
-    // use the bilerp function
-    int i = floor(uv[0] * m);
-    int j = floor(uv[1] * n);
-    Real u = uv[0] * m - i;
-    Real v = uv[1] * n - j;
-    return bilerp(a[i * m + j], a[i * m + j + 1], a[(i + 1) * m + j],
-                  a[(i + 1) * m + j + 1], u, v);
-  }
-  ~PerlinNoise() { delete[] a; }
+  public:
+    PerlinNoise(const Vector<T, Dim>& resolution,
+                const Vector<T, Dim>& spacing) {
+      grid = std::make_unique<spatify::Grid>(resolution, spacing);
+
+    }
+    T eval(const Vector<T, Dim>& tex_coord) const override {
+    }
 };
 
-// 3D Perlin Noise
-template <typename T> class PerlinNoise3D : public Texture<T> {
-private:
-  uint m = 0, n = 0, p = 0;
-  T *a = nullptr;
-  std::shared_ptr<Texture<T>> texA, texB;
+template <typename T, int Dim>
+class CheckerBoard : public Texture<T, Dim> {
+  private:
+    Real grid_w = 0.0, grid_h = 0.0;
+    Texture<T, Dim>* texA, texB;
 
-public:
-  PerlinNoise3D(uint _width, uint _height, uint _depth)
-      : m(_width), n(_height), p(_depth) {
-    a = new T[m * n * p];
-    for (int i = 0; i < m; i++)
-      for (int j = 0; j < n; j++)
-        for (int k = 0; k < p; k++)
-          a[i * m * n + j * n + k] = randomReal();
-  }
-  T eval(const Vec2 &uv) const override {
-    // use the trilerp function
-    int i = floor(uv[0] * m);
-    int j = floor(uv[1] * n);
-    int k = floor(uv[2] * p);
-    Real u = uv[0] * m - i;
-    Real v = uv[1] * n - j;
-    Real w = uv[2] * p - k;
-    return trilerp(
-        a[i * m * n + j * n + k], a[i * m * n + j * n + k + 1],
-        a[i * m * n + (j + 1) * n + k], a[i * m * n + (j + 1) * n + k + 1],
-        a[(i + 1) * m * n + j * n + k], a[(i + 1) * m * n + j * n + k + 1],
-        a[(i + 1) * m * n + (j + 1) * n + k],
-        a[(i + 1) * m * n + (j + 1) * n + k + 1], u, v, w);
-  }
-  ~PerlinNoise3D() { delete[] a; }
+  public:
+    CheckerBoard(const Texture<T, Dim>& A_, const Texture<T, Dim>& B_)
+      : texA(A_), texB(B_) {
+    }
+    T eval(const Vec2& uv) const override {
+      int _u = floor(uv[0] / grid_w);
+      int _v = floor(uv[1] / grid_h);
+      Real u = uv[0] - _u * grid_w;
+      Real v = uv[1] - _v * grid_h;
+      return ((_u ^ _v) & 1) ? texA->eval({u, v}) : texB->eval({u, v});
+    }
 };
 
-template <typename T> class CheckerBoard : public Texture<T> {
-private:
-  T A, B;
-  Real grid_w = 0.0, grid_h = 0.0;
-  std::shared_ptr<Texture<T>> texA, texB;
+template <typename T>
+using SurfaceTexture = Texture<T, 2>;
+template <typename T>
+using VolumeTexture = Texture<T, 3>;
 
-public:
-  CheckerBoard(const Texture<T> &A_, const Texture<T> &B_) : A(A_), B(B_) {}
-  T eval(const Vec2 &uv) const override {
-    int _u = floor(uv[0] / grid_w);
-    int _v = floor(uv[1] / grid_h);
-    Real u = uv[0] - _u * grid_w;
-    Real v = uv[1] - _v * grid_h;
-    return ((_u ^ _v) & 1) ? A->eval({u, v}) : B->eval({u, v});
-  }
-};
-
-template <typename T> class ImageTexture : public Texture<T> {
-private:
-public:
+template <typename T>
+class SampledVolumeTexture : VolumeTexture<T> {
 };
 } // namespace rdcraft
 #endif

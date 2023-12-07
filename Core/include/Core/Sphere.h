@@ -1,8 +1,8 @@
 #ifndef RENDERCRAFT_SPHERE_H
 #define RENDERCRAFT_SPHERE_H
-#include <Core/Ray.h>
-#include <Core/Record.h>
-#include <Core/Shape.h>
+#include <Core/ray.h>
+#include <Core/record.h>
+#include <shape.h>
 /**
  * Because all the coordinates are in local frame, the position of the sphere is
  * on (0, 0, 0) by default

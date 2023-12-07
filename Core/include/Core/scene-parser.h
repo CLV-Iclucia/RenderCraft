@@ -1,6 +1,6 @@
 #ifndef RENDERCRAFT_CORE_INCLUDE_CORE_SCENE_PARSER_H_
 #define RENDERCRAFT_CORE_INCLUDE_CORE_SCENE_PARSER_H_
-// for now I shall use pugixml, in the future I will use my own xml parser instead
+// for now I shall use pugixml, in the future I may use my own xml parser instead
 #include <memory>
 #include <pugixml.hpp>
 #include <Core/Scene.h>

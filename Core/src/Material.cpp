@@ -1,7 +1,7 @@
 ﻿#include <Core/Material.h>
 #include <Core/maths.h>
 #include <cmath>
-#include <Core/Record.h>
+#include <Core/record.h>
 namespace rdcraft {
 /*Both wo and wi leaves the point*/
 Vec3 Metal::Fresnel(Real cosTheta) const {

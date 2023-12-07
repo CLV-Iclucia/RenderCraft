@@ -1,5 +1,1 @@
-#include <Core/core.h>
-
-namespace rdcraft {
-    
-}
+// left blank here, for now I shall use TBB for parallel execution

@@ -2,25 +2,25 @@
 // Created by creeper on 23-3-16.
 //
 
-#include <Core/Integrator.h>
+#include <Core/integrators.h>
 #include <Core/maths.h>
-#include <Core/Record.h>
-#include <Core/Primitive.h>
+#include <Core/record.h>
 #include <Core/Scene.h>
-#include <iostream>
+#include <Core/image-io.h>
 #include <fstream>
-namespace rdcraft {
 
+namespace rdcraft {
 static inline bool testVisibility(const Vec3& a, const Vec3& b, Scene* scene) {
-    Ray test_ray(a, normalize(b - a));
-    return !scene->pr->intersect(test_ray);
+  Ray test_ray(a, normalize(b - a));
+  return !scene->pr->intersect(test_ray);
 }
-Spectrum PathTracer::nextEventEst(const SurfaceRecord &bRec, Scene* scene) const {
+Spectrum
+PathTracer::nextEventEst(const SurfaceRecord& bRec, Scene* scene) const {
   int neeDep = 0;
   Real pdfLight;
   Vec3 pos = bRec.pos;
   Vec3 normal = bRec.normal;
-  Light *light = scene->sampleLight(&pdfLight);
+  Light* light = scene->sampleLight(&pdfLight);
   Real pdfLightPoint;
   Patch pn = light->sample(&pdfLightPoint);
   Vec3 lightPos = pn.p;
@@ -56,7 +56,7 @@ Spectrum PathTracer::L(const Ray& ray, Scene* scene) const {
         }
       }
     }
-    Material *mat = rec.pr->getMaterial();
+    Material* mat = rec.pr->getMaterial();
     Mat3 TBN = constructFrame(rec.normal);
     wo = -ray.dir;
     wo = TBN * wo;
@@ -78,34 +78,28 @@ Spectrum PathTracer::L(const Ray& ray, Scene* scene) const {
 }
 
 void PathTracer::render(Scene* scene) const {
-  std::fstream result(opt.savingPath, std::ios_base::out);
-    result << "P3" << std::endl << scene->camera->nx << " " << scene->camera->ny << std::endl << 255 << std::endl;
-    for (int j = static_cast<int>(scene->camera->ny) - 1; j >= 0; j--) {
-      for (int i = 0; i < scene->camera->nx; i++) {
-        Vec3 radiance;
-        Ray ray;
-        for (int k = 0; k < scene->camera->spp; k++) {
-          Vec2 offset = scene->camera->filter->sample();
-          uint scrWidth = scene->camera->nx, scrHeight = scene->camera->ny;
-          //scene->camera->castRay(Vec3(rx, ry, -opt.scrZ), &ray);
-          //radiance += L(ray, scene) / scene->camera->filter->pdfSample(offset.x, offset.y);
-        }
-        radiance /= static_cast<Real>(scene->camera->spp);
-        if (radiance[0] >= 1.0) radiance[0] = 1.0;
-        if (radiance[1] >= 1.0) radiance[1] = 1.0;
-        if (radiance[2] >= 1.0) radiance[2] = 1.0;
-        radiance[0] = std::sqrt(radiance[0]);
-        radiance[1] = std::sqrt(radiance[1]);
-        radiance[2] = std::sqrt(radiance[2]);
-        result << int(radiance[0] * 255.99) << " " << int(radiance[1] * 255.99) << " " << int(radiance[2] * 255.99)
-              << std::endl;
+  ImageIO image(scene->camera->nx, scene->camera->ny);
+  for (int i = 0; i < scene->camera->nx; i++) {
+    for (int j = 0; j < scene->camera->ny; j++) {
+      Vec3 radiance;
+      Ray ray;
+      for (int k = 0; k < scene->camera->spp; k++) {
+        Vec2 offset = scene->camera->filter->sample();
+        uint scrWidth = scene->camera->nx, scrHeight = scene->camera->ny;
+        //scene->camera->castRay(Vec3(rx, ry, -opt.scrZ), &ray);
+        radiance += L(ray, scene) / scene->camera->filter->pdfSample(
+            offset.x, offset.y);
       }
-      if (opt.enableDisplayProcess) {
-        fflush(stdout);
-        printf("%.2lf %% rendered\n", static_cast<Real>(scene->camera->ny - j) * 100.0 / scene->camera->ny);
-      }
+      radiance /= static_cast<Real>(scene->camera->spp);
+      radiance[0] = std::sqrt(radiance[0]);
+      radiance[1] = std::sqrt(radiance[1]);
+      radiance[2] = std::sqrt(radiance[2]);
+      image.write(i, j, radiance);
     }
-    fflush(stdout);
-    printf("Finish rendering\n");
+    if (opt.enableDisplayProcess) {
+    }
   }
+  printf("Finish rendering\n");
+  image.exportEXR(opt.savingPath.c_str());
+}
 }

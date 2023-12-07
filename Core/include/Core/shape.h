@@ -5,8 +5,8 @@
 #define RENDERCRAFT_SHAPE_H
 #include <memory>
 #include <utility>
-#include <Core/Ray.h>
-#include <Core/Transform.h>
+#include <Core/ray.h>
+#include <Core/transform.h>
 #include <Core/core.h>
 
 namespace rdcraft {
@@ -17,15 +17,15 @@ class SurfaceRecord;
  * */
 class Shape {
  protected:
-  Transform* World2Obj;
-  Transform* Obj2World;
+  Transform* world_to_obj;
+  Transform* obj_to_world;
 
  public:
   Shape() = default;
   // implement some constructors
-  Shape(Transform* World2Obj_,
-        Transform* Obj2World_)
-      : World2Obj(World2Obj_), Obj2World(Obj2World_) {}
+  Shape(Transform* world2obj,
+        Transform* obj2world)
+      : world_to_obj(world2obj), obj_to_world(obj2world) {}
   /**
    * sample a point on the surface of the shape given the position of the shape
    * @return the coordinates of the sample point

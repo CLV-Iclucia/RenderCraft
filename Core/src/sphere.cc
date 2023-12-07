@@ -1,9 +1,10 @@
-#include "Core/core.h"
+#include <Core/core.h>
 #include <Core/Sphere.h>
 #include <Core/maths.h>
 #include <cmath>
+
 namespace rdcraft {
-bool Sphere::intersect(const Ray &ray, SurfaceRecord *pRec) const {
+bool Sphere::intersect(const Ray& ray, SurfaceRecord* pRec) const {
   Vec3 dif = ray.orig;
   Real B = dot(dif, ray.dir);
   Real C = dot(dif, dif) - R * R;
@@ -15,15 +16,16 @@ bool Sphere::intersect(const Ray &ray, SurfaceRecord *pRec) const {
     return false;
   Real dis = (B + delta) >= 0 ? (delta - B) : -(delta + B);
   Vec3 localPos = ray(dis);
-  pRec->uv = Vec2(localPos.x == 0.0 ? PI_DIV_2 : atan(localPos.y / localPos.x) / PI2,
-              acos(localPos.z / R));
+  pRec->uv = Vec2(
+      localPos.x == 0.0 ? PI_DIV_2 : atan(localPos.y / localPos.x) / PI2,
+      acos(localPos.z / R));
   pRec->pos = localPos;
-  pRec->normal = normalize(Obj2World->transNormal(pRec->pos));
+  pRec->normal = normalize(obj_to_world->transNormal(pRec->pos));
   return true;
 }
 
-bool Sphere::intersect(const Ray &ray) const {
-  Ray objRay = World2Obj->apply(ray);
+bool Sphere::intersect(const Ray& ray) const {
+  Ray objRay = world_to_obj->apply(ray);
   Vec3 dif = objRay.orig;
   Real B = dot(dif, objRay.dir);
   Real C = dot(dif, dif) - R * R;

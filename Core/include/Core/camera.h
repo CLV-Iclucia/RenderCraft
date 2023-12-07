@@ -5,9 +5,9 @@
 #ifndef RENDERCRAFT_CAMERA_H
 #define RENDERCRAFT_CAMERA_H
 
-#include "Core/Transform.h"
+#include "Core/transform.h"
 #include <Core/Filter.h>
-#include <Core/Ray.h>
+#include <Core/ray.h>
 #include <Core/core.h>
 #include <memory> 
 namespace rdcraft {
