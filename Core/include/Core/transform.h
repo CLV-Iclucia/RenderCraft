@@ -6,8 +6,10 @@
 #define RENDERCRAFT_TRANSFORM_H
 #include <Core/core.h>
 #include <utility>
-#include <Core/maths.h>
+#include <utils.h>
 #include <Core/ray.h>
+
+#include <Core/debug.h>
 
 namespace rdcraft {
 struct Transform {
@@ -19,12 +21,14 @@ struct Transform {
   Vec3 operator()(const Vec3& v) const {
     Vec4 v4(v.x, v.y, v.z, 1);
     Vec4 result = trans * v4;
-    return Vec3(result.x, result.y, result.z);
+    CHECK_NEZ(result.w);
+    return Vec3(result.x / result.w, result.y / result.w, result.z / result.w);
   }
   Vec3 apply(const Vec3& v) const {
     Vec4 v4(v.x, v.y, v.z, 1);
     Vec4 result = trans * v4;
-    return Vec3(result.x, result.y, result.z);
+    CHECK_NEZ(result.w);
+    return Vec3(result.x / result.w, result.y / result.w, result.z / result.w);
   }
   Ray apply(const Ray& ray) const {
     return Ray(apply(ray.orig), apply(ray.dir));
@@ -33,7 +37,7 @@ struct Transform {
     return Transform(glm::inverse(trans));
   }
   Vec3 transNormal(const Vec3& v) const {
-    // apply transform to normal
+
   }
 };
 }

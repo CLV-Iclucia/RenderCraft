@@ -6,23 +6,66 @@
 #include <vector>
 
 namespace rdcraft {
-struct Mesh {
-  int triangleCount;
+struct ShapeSampleRecord;
+struct Mesh : NonCopyable {
+  int triangleCount{};
   std::vector<Vec3> vertices;
   std::vector<Vec3> normals;
   std::vector<Vec2> uvs;
   std::vector<int> indices;
+  Mesh() = default;
+  Mesh(Mesh&& other) noexcept
+    : triangleCount(other.triangleCount), vertices(std::move(other.vertices)),
+      normals(std::move(other.normals)), uvs(std::move(other.uvs)),
+      indices(std::move(other.indices)) {
+  }
+  Mesh& operator=(Mesh&& rhs) noexcept {
+    triangleCount = rhs.triangleCount;
+    vertices = std::move(rhs.vertices);
+    normals = std::move(rhs.normals);
+    uvs = std::move(rhs.uvs);
+    indices = std::move(rhs.indices);
+    return *this;
+  }
 };
 
 // this design follows pbrt
 struct Triangle : public Shape {
   Triangle() = default;
-  Patch sample(Real *pdf) const override;
-  Triangle(const int* idx_, Mesh *mesh_) : idx(idx_), mesh(mesh_) {}
-  bool intersect(const Ray &ray, SurfaceRecord *pRec) const override;
-  bool intersect(const Ray &ray) const override;
-  AABB getAABB() const override;
-  Real pdfSample(const Vec3 &p) const override;
+  ShapeSampleRecord sample(Sampler& sampler) const override;
+  Triangle(const int* idx_, Mesh* mesh_)
+    : idx(idx_), mesh(mesh_) {
+  }
+  void intersect(const Ray& ray,
+                 std::optional<SurfaceInteraction>& interaction) const override;
+  bool intersect(const Ray& ray) const override;
+  AABB getAABB() const override {
+    Vec3 lo{std::min(
+                std::min(mesh->vertices[idx[0]].x, mesh->vertices[idx[1]].x),
+                mesh->vertices[idx[2]].x),
+            std::min(std::min(mesh->vertices[idx[0]].y,
+                              mesh->vertices[idx[1]].y),
+                     mesh->vertices[idx[2]].y),
+            std::min(std::min(mesh->vertices[idx[0]].z,
+                              mesh->vertices[idx[1]].z),
+                     mesh->vertices[idx[2]].z)};
+    Vec3 hi{std::max(
+                std::max(mesh->vertices[idx[0]].x, mesh->vertices[idx[1]].x),
+                mesh->vertices[idx[2]].x),
+            std::max(std::max(mesh->vertices[idx[0]].y,
+                              mesh->vertices[idx[1]].y),
+                     mesh->vertices[idx[2]].y),
+            std::max(std::max(mesh->vertices[idx[0]].z,
+                              mesh->vertices[idx[1]].z),
+                     mesh->vertices[idx[2]].z)};
+    return {lo, hi};
+  }
+  Real pdfSample(const Vec3& p) const override {
+    return 1.0 / surfaceArea();
+  }
+  Real surfaceArea() const override {
+    return 0.5 * length(cross(pos(1) - pos(0), pos(2) - pos(0)));
+  }
   Vec3 pos(int i) const {
     assert(i >= 0 && i <= 2);
     return mesh->vertices[idx[i]];
@@ -30,7 +73,6 @@ struct Triangle : public Shape {
   const int* idx = nullptr;
   Mesh* mesh = nullptr; ///< the mesh that the triangle belongs to
 };
-
-}  // namespace rdcraft
+} // namespace rdcraft
 
 #endif

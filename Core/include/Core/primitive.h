@@ -1,19 +1,19 @@
 #ifndef RENDERCRAFT_PRIMITIVE_H
 #define RENDERCRAFT_PRIMITIVE_H
 
-#include <Core/Material.h>
-#include <Core/BVH.h>
+#include <Core/material.h>
+#include <Core/bvh.h>
 #include <Core/light.h>
 #include <Core/medium.h>
-#include <Core/record.h>
+#include <Core/interaction.h>
 #include <Core/shape.h>
 #include <Core/transform.h>
 #include <Core/core.h>
-#include <Core/log.h>
+#include <Core/debug.h>
 #include <Core/memory.h>
 #include <memory>
+#include <optional>
 #include <variant>
-#include <vector>
 
 namespace rdcraft {
 class Primitive {
@@ -21,18 +21,17 @@ class Primitive {
     virtual AABB getAABB() const = 0;
     virtual Material* getMaterial() const = 0;
     virtual Light* getLight() const = 0;
-    virtual bool intersect(const Ray& ray, SurfaceRecord* pRec) const = 0;
+    virtual void intersect(const Ray& ray,
+                           std::optional<SurfaceInteraction>& interaction) const
+    = 0;
     /// mainly used for visibility testing
     virtual bool intersect(const Ray& ray) const = 0;
     virtual bool isLight() const = 0;
+    virtual bool isMediumInterface() const = 0;
     virtual ~Primitive() = default;
 };
 
 class GeometryPrimitive : public Primitive {
-  private:
-    std::unique_ptr<Shape> shape;
-    std::variant<MediumInterface, Material*, Light*> surface;
-
   public:
     GeometryPrimitive(std::unique_ptr<Shape> shape, Material* material)
       : shape(std::move(shape)), surface(material) {
@@ -47,16 +46,21 @@ class GeometryPrimitive : public Primitive {
      * forward the intersection request to the shape
      */
     // implement some constructors
-    bool intersect(const Ray& ray, SurfaceRecord* pRec) const override {
-      if (!shape->intersect(ray, pRec)) return false;
-      pRec->pr = static_cast<const Primitive*>(this);
-      return true;
+    void intersect(const Ray& ray,
+                   std::optional<SurfaceInteraction>& interaction)
+    const override {
+      shape->intersect(ray, interaction);
+      if (!interaction) return;
+      interaction->pr = static_cast<const Primitive*>(this);
     }
     bool intersect(const Ray& ray) const override {
       return shape->intersect(ray);
     }
     bool isLight() const override {
-      return surface.index() == 1;
+      return surface.index() == 2;
+    }
+    bool isMediumInterface() const override {
+      return surface.index() == 0;
     }
     int externalMediumId() const {
       if (surface.index() != 2)
@@ -75,7 +79,10 @@ class GeometryPrimitive : public Primitive {
     AABB getAABB() const override {
       return shape->getAABB();
     }
-    virtual ~GeometryPrimitive() = default;
+
+  private:
+    std::unique_ptr<Shape> shape;
+    std::variant<MediumInterface, Material*, Light*> surface;
 };
 
 class TransformedPrimitive : Primitive {
@@ -85,13 +92,14 @@ class TransformedPrimitive : Primitive {
     Transform* Pr2World{};
 
   public:
-    bool intersect(const Ray& ray, SurfaceRecord* pRec) const override {
-      bool hasIntersection = pr->intersect(World2Pr->apply(ray), pRec);
-      if (hasIntersection) {
-        pRec->normal = Pr2World->transNormal(pRec->normal);
-        pRec->pos = Pr2World->apply(pRec->pos);
+    void intersect(const Ray& ray,
+                   std::optional<SurfaceInteraction>& interaction)
+    const override {
+      pr->intersect(World2Pr->apply(ray), interaction);
+      if (interaction) {
+        interaction->normal = Pr2World->transNormal(interaction->normal);
+        interaction->pos = Pr2World->apply(interaction->pos);
       }
-      return hasIntersection;
     }
     bool intersect(const Ray& ray) const override {
       return pr->intersect(World2Pr->apply(ray));
@@ -102,27 +110,27 @@ class TransformedPrimitive : Primitive {
 };
 
 class Aggregate : public Primitive {
-  private:
-    std::unique_ptr<LBVH> lbvh;
-    MemoryManager<Primitive> primitives;
-
   public:
-    explicit Aggregate(MemoryManager<Primitive>&& primitive_lists)
-      : primitives(std::move(primitive_lists)) {
-      lbvh = std::make_unique<LBVH>(primitives);
-    }
+    explicit Aggregate(MemoryManager<Primitive>&& primitives)
+      : lbvh(std::make_unique<LBVH>(primitives)) {}
     Material* getMaterial() const override {
       ERROR("function shouldn't be called.");
     }
     Light* getLight() const override { ERROR("function shouldn't be called."); }
     bool isLight() const override { ERROR("function shouldn't be called."); }
-    bool intersect(const Ray& ray, SurfaceRecord* pRec) const override {
-      return lbvh->intersect(ray, pRec);
+    bool isMediumInterface() const override { ERROR("function shouldn't be called."); }
+    void intersect(const Ray& ray,
+                   std::optional<SurfaceInteraction>& interaction)
+    const override {
+      lbvh->intersect(ray, interaction);
     }
     bool intersect(const Ray& ray) const override {
       return lbvh->intersect(ray);
     }
     AABB getAABB() const override { return lbvh->getAABB(); }
+
+  private:
+    std::unique_ptr<LBVH> lbvh;
 };
 } // namespace rdcraft
 #endif // RENDERCRAFT_PRIMITIVE_H

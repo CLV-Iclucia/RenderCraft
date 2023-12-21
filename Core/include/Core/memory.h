@@ -18,6 +18,12 @@ class MemoryManager : NonCopyable {
   MemoryManager() = default;
   MemoryManager(MemoryManager &&other) noexcept {
     objects = std::move(other.objects);
+    other.objects = nullptr;
+  }
+  MemoryManager& operator=(MemoryManager &&rhs) noexcept {
+    objects = std::move(rhs.objects);
+    rhs.objects = nullptr;
+    return *this;
   }
   template<typename Derived>
   Base *allocate() {
@@ -34,6 +40,11 @@ class MemoryManager : NonCopyable {
     objects.push_back(std::make_unique<Derived>(std::forward<Ts>(args)...));
     return objects.back().get();
   }
+  template<typename Derived, typename ...Ts>
+  Derived *constructDerived(Ts &&... args) {
+    objects.push_back(std::make_unique<Derived>(std::forward<Ts>(args)...));
+    return objects.back().get();
+  }
   const Base *operator()(int i) const {
     return objects[i].get();
   }
@@ -46,25 +57,36 @@ class MemoryManager : NonCopyable {
   std::vector<std::unique_ptr<Base>> objects;
 };
 
-constexpr int kBlockSize = 64;
+constexpr int kDefaultBlockSize = 64;
 
 // use a list of blocks to manage objects of fixed size
-template<typename T>
+template<typename T, int BlockSize = kDefaultBlockSize>
 class MemoryPool : NonCopyable {
  public:
+  MemoryPool() = default;
+  MemoryPool(MemoryPool &&other) noexcept {
+    blocks = std::move(other.blocks);
+    other.blocks = nullptr;
+    other.ptr = 0;
+  }
+  MemoryPool& operator=(MemoryPool &&rhs) noexcept {
+    blocks = std::move(rhs.blocks);
+    rhs.blocks = nullptr;
+    return *this;
+  }
   T *allocate() {
-    if (blocks.empty() || ptr == kBlockSize) {
+    if (blocks.empty() || ptr == BlockSize) {
       blocks.emplace_back();
     }
 
     T *ret = blocks.back().data() + ptr;
-    ptr = ptr == kBlockSize ? 0 : ptr + 1;
+    ptr = ptr == BlockSize ? 0 : ptr + 1;
     return ret;
   }
   template<typename... Ts>
   T *construct(Ts... args) {
-    if (blocks.empty() || ptr == kBlockSize) {
-      std::array<T, kBlockSize> new_block = {T(args...)};
+    if (blocks.empty() || ptr == BlockSize) {
+      std::array<T, BlockSize> new_block = {T(args...)};
       blocks.push_back(std::move(new_block));
       ptr = 1;
       return blocks.back().data();
@@ -80,10 +102,10 @@ class MemoryPool : NonCopyable {
     return blocks.empty();
   }
   int size() const {
-    return blocks.size() * kBlockSize;
+    return blocks.size() * BlockSize;
   }
  private:
-  std::list<std::array<T, kBlockSize>> blocks;
+  std::list<std::array<T, BlockSize>> blocks;
   int ptr = 0; // used size of the tail block
 };
 }

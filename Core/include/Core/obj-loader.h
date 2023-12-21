@@ -4,7 +4,7 @@
 #define RENDERCRAFT_OBJ_LOADER_H
 #include <Core/mesh.h>
 #include <string>
-#define USE_TINYOBJLOADER
+//#define USE_TINYOBJLOADER
 #ifdef USE_TINYOBJLOADER
 #include <tiny_obj_loader.h>
 #endif

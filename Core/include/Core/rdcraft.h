@@ -6,7 +6,7 @@
 #define RENDERCRAFT_CORE_INCLUDE_CORE_RDCRAFT_H_
 #include <Core/scene-parser.h>
 #include <integrators.h>
-#include <Core/Scene.h>
+#include <scene.h>
 namespace rdcraft {
 
 }

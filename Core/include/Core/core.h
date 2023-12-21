@@ -45,7 +45,7 @@ inline Vec3& hi(AABB& aabb) {
 inline const Vec3& hi(const AABB& aabb) {
   return std::get<1>(aabb);
 }
-struct Patch {
+struct SurfacePatch {
   Vec3 p;
   Vec3 n;
 };
@@ -54,5 +54,6 @@ struct NonCopyable {
   NonCopyable(const NonCopyable&) = delete;
   NonCopyable& operator=(const NonCopyable&) = delete;
 };
+
 }
 #endif //RENDERCRAFT_TYPES_H

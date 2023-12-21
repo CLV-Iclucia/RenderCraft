@@ -1,8 +1,8 @@
 //
 // Created by creeper on 22-11-20.
 //
-#include <Core/maths.h>
-#include <Core/record.h>
+#include <Core/utils.h>
+#include <Core/interaction.h>
 #include <Core/mesh.h>
 
 namespace rdcraft {
@@ -20,61 +20,55 @@ static bool insideTriangle(const Vec3& p, const Vec3& a, const Vec3& b,
   return dot(n1, n2) >= 0 && dot(n2, n3) >= 0 && dot(n3, n1) >= 0;
 }
 
-bool Triangle::intersect(const Ray& ray, SurfaceRecord* pRec) const {
-  Vec3 ab = mesh->vertices[idx[1]] - mesh->vertices[idx[0]];
-  Vec3 ac = mesh->vertices[idx[2]] - mesh->vertices[idx[0]];
+void Triangle::intersect(const Ray& ray,
+                         std::optional<SurfaceInteraction>& interaction) const {
+  const auto& a = mesh->vertices[idx[0]];
+  const auto& b = mesh->vertices[idx[1]];
+  const auto& c = mesh->vertices[idx[2]];
+  Vec3 ab = b - a;
+  Vec3 ac = c - a;
   Vec3 p_vec = cross(ray.dir, ac);
   Real det = dot(ab, p_vec);
-  if (det < epsilon<Real>()) return false;
+  if (det < epsilon<Real>())
+    return static_cast<void>(interaction = std::nullopt);
   Real inv_det = 1.0 / det;
-  Vec3 t_vec = ray.orig - mesh->vertices[idx[0]];
+  Vec3 t_vec = ray.orig - a;
   Real u = dot(t_vec, p_vec) * inv_det;
-  if (u < 0.0 || u > 1.0) return false;
+  if (u < 0.0 || u > 1.0) return static_cast<void>(interaction = std::nullopt);
   Vec3 q_vec = cross(t_vec, ab);
   Real v = dot(ray.dir, q_vec) * inv_det;
-  pRec->pos = u * mesh->vertices[idx[0]] + v * mesh->vertices[idx[1]] + (
-                1.0 - u - v) * mesh->vertices[idx[2]];
-  pRec->normal = u * mesh->normals[idx[0]] + v * mesh->normals[idx[1]] + (
-                   1.0 - u - v) * mesh->normals[idx[2]];
-  pRec->uv = u * mesh->uvs[idx[0]] + v * mesh->uvs[idx[1]] + (1.0 - u - v) *
-             mesh->uvs[idx[2]];
-  return true;
+  interaction->pos = u * a + v * b + (1.0 - u - v) * c;
+  interaction->normal = u * mesh->normals[idx[0]] + v * mesh->normals[idx[1]] +
+                        (1.0 - u - v) * mesh->normals[idx[2]];
+  interaction->uv = u * mesh->uvs[idx[0]] + v * mesh->uvs[idx[1]] + (
+                      1.0 - u - v) * mesh->uvs[idx[2]];
 }
 
 bool Triangle::intersect(const Ray& ray) const {
-  Vec3 ab = mesh->vertices[idx[1]] - mesh->vertices[idx[0]];
-  Vec3 ac = mesh->vertices[idx[2]] - mesh->vertices[idx[0]];
+  const auto& a = mesh->vertices[idx[0]];
+  const auto& b = mesh->vertices[idx[1]];
+  const auto& c = mesh->vertices[idx[2]];
+  Vec3 ab = b - a;
+  Vec3 ac = c - a;
   Vec3 p_vec = cross(ray.dir, ac);
   Real det = dot(ab, p_vec);
   if (det < epsilon<Real>()) return false;
   Real inv_det = 1.0 / det;
-  Vec3 t_vec = ray.orig - mesh->vertices[idx[0]];
+  Vec3 t_vec = ray.orig - a;
   Real u = dot(t_vec, p_vec) * inv_det;
   if (u < 0.0 || u > 1.0) return false;
   Vec3 q_vec = cross(t_vec, ab);
-  Real v = dot(ray.dir, q_vec) * inv_det;
-  if (v < 0.0 || u + v > 1.0) return false;
+  if (Real v = dot(ray.dir, q_vec) * inv_det; v < 0.0 || u + v > 1.0) return
+      false;
   return true;
 }
 
-AABB Triangle::getAABB() const {
-  Vec3 lo = Vec3(
-      std::min(std::min(mesh->vertices[idx[0]].x, mesh->vertices[idx[1]].x),
-               mesh->vertices[idx[2]].x),
-      std::min(std::min(mesh->vertices[idx[0]].y, mesh->vertices[idx[1]].y),
-               mesh->vertices[idx[2]].y),
-      std::min(std::min(mesh->vertices[idx[0]].z, mesh->vertices[idx[1]].z),
-               mesh->vertices[idx[2]].z));
-  Vec3 hi = Vec3(
-      std::max(std::max(mesh->vertices[idx[0]].x, mesh->vertices[idx[1]].x),
-               mesh->vertices[idx[2]].x),
-      std::max(std::max(mesh->vertices[idx[0]].y, mesh->vertices[idx[1]].y),
-               mesh->vertices[idx[2]].y),
-      std::max(std::max(mesh->vertices[idx[0]].z, mesh->vertices[idx[1]].z),
-               mesh->vertices[idx[2]].z));
-  return AABB(lo, hi);
-}
-
-Real Triangle::pdfSample(const Vec3& p) const {
+ShapeSampleRecord Triangle::sample(Sampler& sampler) const {
+  Vec3 a = mesh->vertices[idx[0]];
+  Vec3 b = mesh->vertices[idx[1]];
+  Vec3 c = mesh->vertices[idx[2]];
+  Vec3 p = uniformSampleTriangle(a, b, c);
+  Real pdf = 1.0 / surfaceArea();
+  return {{p, normalize(cross(b - a, c - a))}, pdf};
 }
 } // namespace rdcraft

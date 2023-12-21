@@ -3,26 +3,28 @@
 //
 
 #include <Core/integrators.h>
-#include <Core/maths.h>
-#include <Core/record.h>
-#include <Core/Scene.h>
+#include <Core/interaction.h>
+#include <Core/scene.h>
 #include <Core/image-io.h>
+#include <Core/parallel.h>
 #include <fstream>
 
 namespace rdcraft {
-static inline bool testVisibility(const Vec3& a, const Vec3& b, Scene* scene) {
+static bool testVisibility(const Vec3& a, const Vec3& b, const Scene* scene) {
   Ray test_ray(a, normalize(b - a));
-  return !scene->pr->intersect(test_ray);
+  std::optional<SurfaceInteraction> si;
+  scene->pr->intersect(test_ray, si);
+  return si ? distance(si->pos, b) < epsilon<Real>() : false;
 }
-Spectrum
-PathTracer::nextEventEst(const SurfaceRecord& bRec, Scene* scene) const {
+
+static Spectrum
+nextEventEst(const SurfaceInteraction& bRec, const Scene* scene) {
   int neeDep = 0;
-  Real pdfLight;
   Vec3 pos = bRec.pos;
   Vec3 normal = bRec.normal;
-  Light* light = scene->sampleLight(&pdfLight);
+  auto [light, pdfLight] = scene->sampleLight();
   Real pdfLightPoint;
-  Patch pn = light->sample(&pdfLightPoint);
+  SurfacePatch pn = light->sample(&pdfLightPoint);
   Vec3 lightPos = pn.p;
   pdfLight *= pdfLightPoint;
   Vec3 toLight = lightPos - pos;
@@ -33,72 +35,76 @@ PathTracer::nextEventEst(const SurfaceRecord& bRec, Scene* scene) const {
   if (testVisibility(pos, lightPos, scene)) {
     L_nee += light->evalEmission(pn, -toLight) / pdfLight;
     // TODO: Finish NEE with MIS here
+
   }
+  return L_nee;
 }
 
-Spectrum PathTracer::L(const Ray& ray, Scene* scene) const {
+Spectrum PathTracer::L(const Ray& ray, const Scene* scene) const {
   Spectrum throughput(1.0);
   Spectrum L;
   Vec3 wo = ray.dir;
+  Real pdfBxdfCache{}; // used for MIS
   for (int bounce = 0;; bounce++) {
-    if (randomReal() > opt.PRR) break;
-    SurfaceRecord rec;
-    if (!(scene->pr->intersect(ray, &rec)) || rec.pr->isLight()) {
+    if (bounce >= opt.rrDepth) {
+      // TODO: rr
+    }
+    std::optional<SurfaceInteraction> interaction;
+    scene->pr->intersect(ray, interaction);
+    if (!interaction) {
+      // env map
       if (bounce) {
-        // TODO: Implement MIS here
+        // TODO: Implement MIS for env map here
+
       } else {
         if (scene->envMap)
-          L += scene->envMap->evalEmission(wo);
-        else {
-          // L += rec.pr->getLight()->evalEmission();
-          // TODO: implement MIS for direct light here
-          break;
-        }
+          L += scene->envMap->evalEmission({}, wo);
+        break;
       }
+    } else if (interaction->pr->isLight()) {
+      auto light = interaction->pr->getLight();
+      Real pLight = scene->probSampleLight(light);
+      Real pdfLight = pLight * light->pdfSample(interaction->pos); // area measure
+      Real G = computeGeometry();
+      Real pdfBxdf = G * pdfBxdfCache; // pdfBxdfCache: solid angle measure, pdfBxdf: area measure
+      Real weight = pdfLight * pdfLight / (pdfBxdf * pdfBxdf + pdfLight * pdfLight);
+      L += weight * throughput * light->evalEmission(interaction->pos, -ray.dir);
+      break;
+    } else if (interaction->pr->isMediumInterface()) {
+      ERROR(
+          "Encountered medium interface in the scene, which cannot be handled by naive path tracer.\n"
+          "Consider using volumetric path tracer instead.");
     }
-    Material* mat = rec.pr->getMaterial();
-    Mat3 TBN = constructFrame(rec.normal);
-    wo = -ray.dir;
-    wo = TBN * wo;
-    Real pdf;
-    Vec3 wi = mat->sample(rec, wo, &pdf);
-    L += throughput * nextEventEst(rec, scene);
-    if (!(scene->pr->intersect(Ray(rec.pos, wi)))) {
-      Spectrum dir_rad = scene->envMap->evalEmission(wi);
-      Real cosThetaI = std::abs(wi.z);
-      L += throughput * mat->BxDF(rec, wo, wi) * cosThetaI * dir_rad / pdf;
-    }
-    wi = mat->sample(rec, wo, &pdf);
-    wi = inverse(TBN) * wi;
-    const Real cosThetaI = std::abs(wi[2]);
-    throughput *= mat->BxDF(rec, wo, wi) / pdf * cosThetaI / opt.PRR;
+    Material* mat = interaction->pr->getMaterial();
+    ShadingInfo si{*interaction, -ray.dir};
+    L += throughput * nextEventEst(interaction.value(), scene);
+    auto optRec{mat->sample(si, *scene->sampler)};
+    if (!optRec) break;
+    const auto& wi = optRec->wi;
+    Real pdfBxdf = optRec->pdf;
+    pdfBxdfCache = pdfBxdf;
+    const Real cosThetaI = std::abs(wi.z);
+    throughput *= mat->computeScatter(si) / pdfBxdf * cosThetaI;
     wo = wi;
   }
   return L;
 }
 
-void PathTracer::render(Scene* scene) const {
+void PathTracer::render(const Scene* scene) const {
   ImageIO image(scene->camera->nx, scene->camera->ny);
-  for (int i = 0; i < scene->camera->nx; i++) {
+  int nx{static_cast<int>(scene->camera->nx)};
+  tbb::parallel_for(0, nx, [scene, &](int i) {
     for (int j = 0; j < scene->camera->ny; j++) {
-      Vec3 radiance;
-      Ray ray;
+      Vec3 radiance{};
+      // we use non-splatting style since it is easier to code
       for (int k = 0; k < scene->camera->spp; k++) {
-        Vec2 offset = scene->camera->filter->sample();
-        uint scrWidth = scene->camera->nx, scrHeight = scene->camera->ny;
-        //scene->camera->castRay(Vec3(rx, ry, -opt.scrZ), &ray);
-        radiance += L(ray, scene) / scene->camera->filter->pdfSample(
-            offset.x, offset.y);
+        Ray ray{scene->camera->generateRaySample(i, j)};
+        radiance += L(ray, scene);
       }
       radiance /= static_cast<Real>(scene->camera->spp);
-      radiance[0] = std::sqrt(radiance[0]);
-      radiance[1] = std::sqrt(radiance[1]);
-      radiance[2] = std::sqrt(radiance[2]);
       image.write(i, j, radiance);
     }
-    if (opt.enableDisplayProcess) {
-    }
-  }
+  });
   printf("Finish rendering\n");
   image.exportEXR(opt.savingPath.c_str());
 }

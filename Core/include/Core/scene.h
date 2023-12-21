@@ -10,8 +10,15 @@
 #include <Core/sampler.h>
 #include <memory>
 #include <vector>
+
 namespace rdcraft {
 class Integrator;
+
+struct LightSampleRecord {
+  const Light* light{nullptr};
+  Real pdf{0.0};
+};
+
 // resource management: shapes are managed by Primitives
 // others are directly managed by Scene using unique_ptr and STL
 // Textures are somewhat difficult to handle, for now we directly instantiate Texture<Vec3> and Texture<Real>
@@ -20,22 +27,29 @@ struct Scene : NonCopyable {
   std::unique_ptr<Camera> camera;
   std::unique_ptr<Aggregate> pr;
   std::unique_ptr<EnvMap> envMap;
-  MemoryManager<AreaLight> areaLights;
+  MemoryManager<Light> lights;
   MemoryManager<Material> materials;
   MemoryPool<Transform> transforms;
   MemoryManager<Medium> media;
-  std::vector<Mesh> meshes;
-  Real worldBoundRadius = 0;
+  MemoryPool<Mesh> meshes;
+  Real worldBoundRadius = 1e4;
   std::unique_ptr<Sampler> sampler;
-  Light *sampleLight(Real *pdf) const {
-    // TODO: implement this!
+  DiscreteDistribution lightDistribution;
+  void buildLightDistribution() {
+    std::vector<Real> weights;
+    for (const auto& light : lights)
+      weights.push_back(light->power());
+    weights.push_back(envMap->power());
+    lightDistribution.buildFromWeights(weights);
   }
-  Real pdfSampleLight() const {
-    // TODO: implement this!
+  LightSampleRecord sampleLight() const {
+    auto [idx, p] = lightDistribution.sample();
+    if (idx == lights.size())
+      return {nullptr, 1.0};
+    return {lights(idx), p};
   }
-  Real getExternalRefractionRate(MediumInterface interface) {
-  }
-  Real getInternalRefractionRate(MediumInterface interface) {
+  Real probSampleLight(Light* light) const {
+
   }
 };
 }

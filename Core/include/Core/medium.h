@@ -6,7 +6,7 @@
 #define RENDERCRAFT_MEDIUM_H
 #include <Core/core.h>
 #include <Core/spectrums.h>
-#include <Core/Texture.h>
+#include <texture.h>
 
 namespace rdcraft {
 class Medium {
@@ -29,12 +29,11 @@ struct HomogeneousMedium : public Medium {
   Spectrum extinctionCoefficient(const Vec3& p) const {
     return sigma_a + sigma_s;
   }
-  virtual ~HomogeneousMedium() = default;
 };
 
-struct HeterogeneousMedium : public Medium {
-  VolumeTexture<Spectrum>* sigma_s;
-  VolumeTexture<Spectrum>* sigma_a;
+struct HeterogeneousMedium : Medium {
+  std::unique_ptr<VolumeTexture<Spectrum>> sigma_s;
+  std::unique_ptr<VolumeTexture<Spectrum>> sigma_a;
   Spectrum absorptionCoeffcient(const Vec3& p) const {
     return sigma_a->eval(p);
   }

@@ -13,7 +13,7 @@
 #include <iostream>
 
 namespace rdcraft {
-class ImageIO {
+class ImageIO : NonCopyable {
   public:
     ImageIO(int w, int h)
       : width(w), height(h) {
