@@ -4,11 +4,8 @@
 #define RENDERCRAFT_OBJ_LOADER_H
 #include <Core/mesh.h>
 #include <string>
-//#define USE_TINYOBJLOADER
-#ifdef USE_TINYOBJLOADER
-#include <tiny_obj_loader.h>
-#endif
+#define USE_MODIFIED_LAJOLLA_LOADER
 namespace rdcraft {
-bool loadObj(const std::string& path, Mesh* mesh);
+bool loadObj(const std::string& filename, Mesh* mesh);
 }
 #endif

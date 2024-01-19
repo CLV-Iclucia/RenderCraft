@@ -57,7 +57,7 @@ std::optional<BxdfSampleRecord> Metal::sample(const ShadingInfo& si,
   if (cosTheta < 0.0 || ret.z < 0.0)
     return std::nullopt;
   bRec->pdf *= 4.0 * cosTheta;
-  return {ret, bRec->pdf};
+  return std::make_optional<BxdfSampleRecord>(ret, bRec->pdf);
 }
 
 std::optional<BxdfSampleRecord> Lambertian::sample(
@@ -111,18 +111,17 @@ std::optional<BxdfSampleRecord> Dieletrics::sample(
       return std::nullopt;
     pdf /= 4.0 * cosTheta;
     return std::make_optional<BxdfSampleRecord>(reflect_wi, pdf);
-  } else {
-    Vec3 refract_wi = normalize(refract(Wo, H, eta));
-    if (refract_wi.z > 0.0)
-      // in this case it is only possible to generate a reflection light
-        return std::nullopt;
-    Real cosThetaI = dot(H, refract_wi);
-    Real tmp = cosTheta + eta * cosThetaI;
-    pdf /= 2.0 * tmp * tmp / (etaSqr * std::abs(cosThetaI));
-    if (inside)
-      refract_wi.z = -refract_wi.z;
-    return std::make_optional<BxdfSampleRecord>(refract_wi, pdf);
   }
+  Vec3 refract_wi = normalize(refract(Wo, H, eta));
+  if (refract_wi.z > 0.0)
+    // in this case it is only possible to generate a reflection light
+      return std::nullopt;
+  Real cosThetaI = dot(H, refract_wi);
+  Real tmp = cosTheta + eta * cosThetaI;
+  pdf /= 2.0 * tmp * tmp / (etaSqr * std::abs(cosThetaI));
+  if (inside)
+    refract_wi.z = -refract_wi.z;
+  return std::make_optional<BxdfSampleRecord>(refract_wi, pdf);
 }
 
 Spectrum Dieletrics::computeScatter(const ShadingInfo& si) const {

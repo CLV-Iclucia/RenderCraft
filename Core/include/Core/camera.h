@@ -29,8 +29,8 @@ struct Camera {
     Vec2 offset = filter->sample();
     Vec3 orig{};
     Real spacing = scrWidth / nx;
-    Vec3 dir{(x + offset.x - nx / 2) * spacing,
-             (y + offset.y - ny / 2) * spacing, nearPlane};
+    Vec3 dir{((x + offset.x - nx) / 2) * spacing,
+             ((y + offset.y - ny) / 2) * spacing, nearPlane};
     return {cameraToWorld->apply(orig), normalize(cameraToWorld->apply(dir))};
   }
 };

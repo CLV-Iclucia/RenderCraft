@@ -33,11 +33,11 @@ struct Scene : NonCopyable {
   MemoryManager<Medium> media;
   MemoryPool<Mesh> meshes;
   Real worldBoundRadius = 1e4;
-  std::unique_ptr<Sampler> sampler;
+  mutable std::unique_ptr<Sampler> sampler;
   DiscreteDistribution lightDistribution;
   void buildLightDistribution() {
     std::vector<Real> weights;
-    for (const auto& light : lights)
+    for (const auto& light : lights.objects())
       weights.push_back(light->power());
     weights.push_back(envMap->power());
     lightDistribution.buildFromWeights(weights);
@@ -49,7 +49,7 @@ struct Scene : NonCopyable {
     return {lights(idx), p};
   }
   Real probSampleLight(Light* light) const {
-
+    return lightDistribution.prob(light - lights.objects().data()->get());
   }
 };
 }

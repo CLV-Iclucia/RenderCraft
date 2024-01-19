@@ -3,6 +3,7 @@
 
 #include <Core/core.h>
 #include <Core/shape.h>
+#include <Core/utils.h>
 #include <vector>
 
 namespace rdcraft {
@@ -30,9 +31,8 @@ struct Mesh : NonCopyable {
 };
 
 // this design follows pbrt
-struct Triangle : public Shape {
+struct Triangle final : public Shape {
   Triangle() = default;
-  ShapeSampleRecord sample(Sampler& sampler) const override;
   Triangle(const int* idx_, Mesh* mesh_)
     : idx(idx_), mesh(mesh_) {
   }
@@ -40,25 +40,17 @@ struct Triangle : public Shape {
                  std::optional<SurfaceInteraction>& interaction) const override;
   bool intersect(const Ray& ray) const override;
   AABB getAABB() const override {
-    Vec3 lo{std::min(
-                std::min(mesh->vertices[idx[0]].x, mesh->vertices[idx[1]].x),
-                mesh->vertices[idx[2]].x),
-            std::min(std::min(mesh->vertices[idx[0]].y,
-                              mesh->vertices[idx[1]].y),
-                     mesh->vertices[idx[2]].y),
-            std::min(std::min(mesh->vertices[idx[0]].z,
-                              mesh->vertices[idx[1]].z),
-                     mesh->vertices[idx[2]].z)};
-    Vec3 hi{std::max(
-                std::max(mesh->vertices[idx[0]].x, mesh->vertices[idx[1]].x),
-                mesh->vertices[idx[2]].x),
-            std::max(std::max(mesh->vertices[idx[0]].y,
-                              mesh->vertices[idx[1]].y),
-                     mesh->vertices[idx[2]].y),
-            std::max(std::max(mesh->vertices[idx[0]].z,
-                              mesh->vertices[idx[1]].z),
-                     mesh->vertices[idx[2]].z)};
+    Vec3 lo{std::min(std::min(pos(0).x, pos(1).x), pos(2).x),
+            std::min(std::min(pos(0).y, pos(1).y), pos(2).y),
+            std::min(std::min(pos(0).z, pos(1).z), pos(2).z)};
+    Vec3 hi{std::max(std::max(pos(0).x, pos(1).x), pos(2).x),
+            std::max(std::max(pos(0).y, pos(1).y), pos(2).y),
+            std::max(std::max(pos(0).z, pos(1).z), pos(2).z)};
     return {lo, hi};
+  }
+  ShapeSampleRecord sample(Sampler& sampler) const override;
+  Vec3 getNormal(const Vec3& p) const override {
+    return normalize(cross(pos(1) - pos(0), pos(2) - pos(0)));
   }
   Real pdfSample(const Vec3& p) const override {
     return 1.0 / surfaceArea();

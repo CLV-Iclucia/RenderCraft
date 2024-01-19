@@ -40,6 +40,6 @@ std::optional<BxdfSampleRecord> TrowbridgeModel::sample(
   tmp *= tmp;
   Real pdf = cosTheta / tmp * alphaSqr / PI;
   Vec3 H(sinTheta * std::cos(Phi), sinTheta * std::sin(Phi), cosTheta);
-  return {H, pdf};
+  return std::make_optional<BxdfSampleRecord>(H, pdf);
 }
 }

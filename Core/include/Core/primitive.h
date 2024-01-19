@@ -31,7 +31,7 @@ class Primitive {
     virtual ~Primitive() = default;
 };
 
-class GeometryPrimitive : public Primitive {
+class GeometryPrimitive final : public Primitive {
   public:
     GeometryPrimitive(std::unique_ptr<Shape> shape, Material* material)
       : shape(std::move(shape)), surface(material) {
@@ -42,16 +42,19 @@ class GeometryPrimitive : public Primitive {
     GeometryPrimitive(std::unique_ptr<Shape> shape, MediumInterface interface)
       : shape(std::move(shape)), surface(interface) {
     }
-    /**
-     * forward the intersection request to the shape
-     */
-    // implement some constructors
     void intersect(const Ray& ray,
                    std::optional<SurfaceInteraction>& interaction)
     const override {
-      shape->intersect(ray, interaction);
+      if (shape->needsTransform())
+        shape->intersect(shape->transformToObj()->transform(ray), interaction);
+      else
+        shape->intersect(ray, interaction);
       if (!interaction) return;
       interaction->pr = static_cast<const Primitive*>(this);
+      if (shape->needsTransform()) {
+        shape->transformToWorld()->transform(interaction->pos);
+        shape->transformToWorld()->transNormal(interaction->normal);
+      }
     }
     bool intersect(const Ray& ray) const override {
       return shape->intersect(ray);
@@ -69,7 +72,7 @@ class GeometryPrimitive : public Primitive {
     }
     int internalMediumId() const {
       if (surface.index() != 2)
-        ERROR("cannot be called on non-medium primitive.")
+        ERROR("cannot be called on non-medium primitive.");
       return std::get<MediumInterface>(surface).internal_id;
     }
     Material* getMaterial() const override {
@@ -77,6 +80,8 @@ class GeometryPrimitive : public Primitive {
     }
     Light* getLight() const override { return std::get<Light*>(surface); }
     AABB getAABB() const override {
+      if (shape->needsTransform())
+        return shape->transformToWorld()->transform(shape->getAABB());
       return shape->getAABB();
     }
 
@@ -87,38 +92,45 @@ class GeometryPrimitive : public Primitive {
 
 class TransformedPrimitive : Primitive {
   private:
-    Primitive* pr{};
-    Transform* World2Pr{};
-    Transform* Pr2World{};
+    const Primitive* pr{};
+    const Transform* World2Pr{};
+    const Transform* Pr2World{};
 
   public:
+    TransformedPrimitive(const Primitive* pr, const Transform* world2pr,
+                         const Transform* pr2world)
+      : pr(pr), World2Pr(world2pr), Pr2World(pr2world) {
+    }
     void intersect(const Ray& ray,
                    std::optional<SurfaceInteraction>& interaction)
     const override {
-      pr->intersect(World2Pr->apply(ray), interaction);
+      pr->intersect(World2Pr->transform(ray), interaction);
       if (interaction) {
-        interaction->normal = Pr2World->transNormal(interaction->normal);
-        interaction->pos = Pr2World->apply(interaction->pos);
+        Pr2World->transNormal(interaction->normal);
+        Pr2World->transform(interaction->pos);
       }
     }
     bool intersect(const Ray& ray) const override {
-      return pr->intersect(World2Pr->apply(ray));
+      return pr->intersect(World2Pr->transform(ray));
     }
     Material* getMaterial() const override { return pr->getMaterial(); }
     Light* getLight() const override { return pr->getLight(); }
     bool isLight() const override { return pr->isLight(); };
 };
 
-class Aggregate : public Primitive {
+class Aggregate final : public Primitive {
   public:
     explicit Aggregate(MemoryManager<Primitive>&& primitives)
-      : lbvh(std::make_unique<LBVH>(primitives)) {}
+      : lbvh(std::make_unique<LBVH>(std::move(primitives))) {
+    }
     Material* getMaterial() const override {
       ERROR("function shouldn't be called.");
     }
     Light* getLight() const override { ERROR("function shouldn't be called."); }
     bool isLight() const override { ERROR("function shouldn't be called."); }
-    bool isMediumInterface() const override { ERROR("function shouldn't be called."); }
+    bool isMediumInterface() const override {
+      ERROR("function shouldn't be called.");
+    }
     void intersect(const Ray& ray,
                    std::optional<SurfaceInteraction>& interaction)
     const override {

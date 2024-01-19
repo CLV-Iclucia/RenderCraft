@@ -18,15 +18,14 @@ void Sphere::intersect(const Ray& ray,
     return static_cast<void>(interaction = std::nullopt);
   Real dis = (B + delta) >= 0 ? (delta - B) : -(delta + B);
   Vec3 localPos = ray(dis);
-  interaction->uv = Vec2(
+  auto uv = Vec2(
       localPos.x == 0.0 ? PI_DIV_2 : atan(localPos.y / localPos.x) / PI2,
       acos(localPos.z / R));
-  interaction->pos = localPos;
-  interaction->normal = normalize(Obj2World->transNormal(interaction->pos));
+  interaction.emplace(uv, localPos, localPos / R);
 }
 
 bool Sphere::intersect(const Ray& ray) const {
-  Ray objRay = World2Obj->apply(ray);
+  Ray objRay = World2Obj->transform(ray);
   Vec3 dif = objRay.orig;
   Real B = dot(dif, objRay.dir);
   Real C = dot(dif, dif) - R * R;

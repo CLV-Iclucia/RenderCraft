@@ -2,6 +2,7 @@
 #define RENDERCRAFT_CORE_SAMPLER_H
 
 #include <Core/core.h>
+#include <Core/rand-gen.h>
 #include <random>
 
 namespace rdcraft {
@@ -86,6 +87,9 @@ struct DiscreteDistribution {
       return {idx, pdf};
     else
       return {alias[idx], pdf};
+  }
+  Real prob(int idx) const {
+    return probabilities[idx] * probabilities.size();
   }
   std::vector<Real> probabilities;
   std::vector<int> alias;

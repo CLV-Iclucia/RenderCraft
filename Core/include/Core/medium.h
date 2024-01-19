@@ -6,7 +6,7 @@
 #define RENDERCRAFT_MEDIUM_H
 #include <Core/core.h>
 #include <Core/spectrums.h>
-#include <texture.h>
+#include <Core/texture.h>
 
 namespace rdcraft {
 class Medium {

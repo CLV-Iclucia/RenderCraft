@@ -5,18 +5,19 @@
 #include <cassert>
 #include <cstdint>
 #include <Core/memory.h>
+#include <gtest/gtest.h>
 
 namespace rdcraft {
 static bool intersectBBox(const AABB& bbox, const Ray& ray) {
   const Vec3& orig = ray.orig;
   const Vec3& dir = ray.dir;
   const Vec3 invDir = 1.0 / dir;
-  const Vec3b dirIsNeg{dir[0] > 0.0, dir[1] > 0.0, dir[2] > 0.0};
+  const Vec3b dirIsNeg{dir[0] < 0.0, dir[1] < 0.0, dir[2] < 0.0};
   Vec3 tMin = (lo(bbox) - orig) * invDir;
   Vec3 tMax = (hi(bbox) - orig) * invDir;
-  if (!dirIsNeg[0]) std::swap(tMin[0], tMax[0]);
-  if (!dirIsNeg[1]) std::swap(tMin[1], tMax[1]);
-  if (!dirIsNeg[2]) std::swap(tMin[2], tMax[2]);
+  if (dirIsNeg[0]) std::swap(tMin[0], tMax[0]);
+  if (dirIsNeg[1]) std::swap(tMin[1], tMax[1]);
+  if (dirIsNeg[2]) std::swap(tMin[2], tMax[2]);
   Real t_in = std::max(std::max(tMin[0], tMin[1]), tMin[2]);
   if (Real t_out = std::min(std::min(tMax[0], tMax[1]), tMax[2]);
     t_in > t_out || t_out < 0.0)
@@ -120,37 +121,44 @@ struct LbvhRawNode {
   std::unique_ptr<LbvhRawNode> lch{}, rch{};
 };
 
+// [l, r)
 static void lbvhRecursiveBuild(std::unique_ptr<LbvhRawNode>& o,
                                const std::vector<MortonPrimitive>& mp,
+                               const MemoryManager<Primitive>& primitives,
                                int l, int r, int depth) {
+  ASSERT_LT(l, r);
   if (o == nullptr)
     o = std::make_unique<LbvhRawNode>();
-  if (depth == 0) {
+  if (depth == 0 || r - l == 1) {
     o->start = l;
     o->end = r;
+    o->bbox = primitives(l)->getAABB();
+    for (int i = l + 1; i < r; i++)
+      o->bbox = mergeAABB(o->bbox, primitives(i)->getAABB());
     return;
   }
-  if (int bitMask = 1 << depth; mp[l].mortonCode & bitMask == mp[r].mortonCode &
+  if (int bitMask = 1 << depth; mp[l].mortonCode & bitMask == mp[r - 1].mortonCode &
                                 bitMask) {
     o->start = l;
     o->end = r;
-    lbvhRecursiveBuild(o, mp, l, r, depth - 1);
+    lbvhRecursiveBuild(o, mp, primitives, l, r, depth - 1);
   } else {
     int searchStart = l;
-    int searchEnd = r;
-    while (searchStart + 1 < searchEnd) {
-      int mid = (searchStart + searchEnd) >> 1;
+    int searchEnd = r - 1;
+    while (searchStart < searchEnd) {
+      int mid = (searchStart + searchEnd + 1) >> 1;
       if (mp[mid].mortonCode & bitMask == mp[l].mortonCode & bitMask)
         searchStart = mid;
       else
-        searchEnd = mid;
+        searchEnd = mid - 1;
     }
-    int split = searchEnd;
+    int split = searchEnd + 1;
     o->start = l;
     o->end = r;
     o->axis = depth % 3;
-    lbvhRecursiveBuild(o->lch, mp, l, split, depth - 1);
-    lbvhRecursiveBuild(o->rch, mp, split, r, depth - 1);
+    lbvhRecursiveBuild(o->lch, mp, primitives, l, split, depth - 1);
+    lbvhRecursiveBuild(o->rch, mp, primitives, split, r, depth - 1);
+    o->bbox = mergeAABB(o->lch->bbox, o->rch->bbox);
   }
 }
 
@@ -166,8 +174,9 @@ static void lbvhFlatten(const std::unique_ptr<LbvhRawNode>& o,
   nodes.emplace_back(o->bbox, -1, 0, o->axis);
   int currentIdx = nodes.size() - 1;
   lbvhFlatten(o->lch, nodes);
-  nodes[currentIdx].rchOffset = nodes.size() - 1 - currentIdx;
+  int ltr_end = nodes.size() - 1;
   lbvhFlatten(o->rch, nodes);
+  nodes[currentIdx].rchOffset = ltr_end + 1 - currentIdx;
 }
 
 void lbvhBuild(const MemoryManager<Primitive>& primitives,
@@ -179,36 +188,30 @@ void lbvhBuild(const MemoryManager<Primitive>& primitives,
   AABB aggregateBbox(primitives(0)->getAABB());
   for (int i = 1; i < primitives.size(); i++)
     aggregateBbox = mergeAABB(aggregateBbox, primitives(i)->getAABB());
-  // parallel for all Primitives to compute their centroids and init bounding box
-  tbb::parallel_for
-      (tbb::blocked_range<size_t>(0, primitives.size()),
-       [&](const tbb::blocked_range<size_t>& range) {
-         for (size_t i = range.begin(); i < range.end(); i++) {
-           buildingInfos[i].bbox = primitives(i)->getAABB();
-           Vec3 centroid = (lo(buildingInfos[i].bbox) + hi(
-                                buildingInfos[i].bbox)) * 0.5;
-           buildingInfos[i].centroid = centroid;
-           mortonPrimitives[i].primitiveIndex = i;
-           Vec3 reScaledCentroid =
-               (centroid - lo(aggregateBbox)) / (
-                 hi(aggregateBbox) - lo(aggregateBbox));
-           mortonPrimitives[i].mortonCode =
-               mortonEncode(
-                   static_cast<uint64_t>(
-                     reScaledCentroid.x * (1 << kMortonBits)),
-                   static_cast<uint64_t>(
-                     reScaledCentroid.y * (1 << kMortonBits)),
-                   static_cast<uint64_t>(
-                     reScaledCentroid.z * (1 << kMortonBits)));
-         }
-       });
-  tbb::parallel_sort
-      (mortonPrimitives.begin(), mortonPrimitives.end(),
-       [](const MortonPrimitive& lhs, const MortonPrimitive& rhs) {
-         return lhs.mortonCode < rhs.mortonCode;
-       });
+  // for all Primitives to compute their centroids and init bounding box
+  for (int i = 1; i < primitives.size(); i++) {
+    buildingInfos[i].bbox = primitives(i)->getAABB();
+    Vec3 centroid = (lo(buildingInfos[i].bbox) + hi(buildingInfos[i].bbox)) *
+                    0.5;
+    buildingInfos[i].centroid = centroid;
+    mortonPrimitives[i].primitiveIndex = i;
+    Vec3 reScaledCentroid = (centroid - lo(aggregateBbox)) / (
+                              hi(aggregateBbox) - lo(aggregateBbox));
+    mortonPrimitives[i].mortonCode =
+        mortonEncode(
+            static_cast<uint64_t>(
+              reScaledCentroid.x * (1 << kMortonBits)),
+            static_cast<uint64_t>(
+              reScaledCentroid.y * (1 << kMortonBits)),
+            static_cast<uint64_t>(
+              reScaledCentroid.z * (1 << kMortonBits)));
+  }
+  std::ranges::sort(mortonPrimitives.begin(), mortonPrimitives.end(),
+                    [](const MortonPrimitive& lhs, const MortonPrimitive& rhs) {
+                      return lhs.mortonCode < rhs.mortonCode;
+                    });
   std::unique_ptr<LbvhRawNode> rt{};
-  lbvhRecursiveBuild(rt, mortonPrimitives, 0, primitives.size(), 31);
+  lbvhRecursiveBuild(rt, mortonPrimitives, primitives, 0, primitives.size(), 31);
   lbvhFlatten(rt, nodes);
 }
 
@@ -255,8 +258,8 @@ void LBVH::intersect(const Ray& ray,
       continue;
     }
     const LBVHNode& lch = nodes[nodeIdx + 1];
-    assert(node.rchOffset < nodes.size());
-    const LBVHNode& rch = nodes[node.rchOffset];
+    assert(nodeIdx + node.rchOffset < nodes.size());
+    const LBVHNode& rch = nodes[nodeIdx + node.rchOffset];
     int axis = node.axis;
     bool intl = intersectBBox(lch.bbox, ray);
     bool intr = intersectBBox(rch.bbox, ray);
@@ -265,15 +268,17 @@ void LBVH::intersect(const Ray& ray,
       nodeIdx = nodesToVisit[--top];
       continue;
     }
-    if (intl && !intr) nodesToVisit[top++] = nodeIdx + 1;
-    else if (!intl) nodesToVisit[top++] = node.rchOffset;
+    if (intl && !intr) nodeIdx = nodeIdx + 1;
+    else if (!intl) nodeIdx = nodeIdx + node.rchOffset;
     else {
+      int lchIdx = nodeIdx + 1;
+      int rchIdx = nodeIdx + node.rchOffset;
       if (ray.dir[axis] > 0.0) {
-        nodeIdx = nodeIdx + 1;
-        nodesToVisit[top++] = node.rchOffset;
+        nodeIdx = lchIdx;
+        nodesToVisit[top++] = rchIdx;
       } else {
-        nodeIdx = node.rchOffset;
-        nodesToVisit[top++] = nodeIdx + 1;
+        nodeIdx = rchIdx;
+        nodesToVisit[top++] = lchIdx;
       }
     }
   }
@@ -300,7 +305,7 @@ bool LBVH::intersect(const Ray& ray) const {
     }
     const LBVHNode& lch = nodes[nodeIdx + 1];
     assert(node.rchOffset < nodes.size());
-    const LBVHNode& rch = nodes[node.rchOffset];
+    const LBVHNode& rch = nodes[nodeIdx + node.rchOffset];
     bool intl = intersectBBox(lch.bbox, ray);
     bool intr = intersectBBox(rch.bbox, ray);
     if (!intl && !intr) {
@@ -309,14 +314,16 @@ bool LBVH::intersect(const Ray& ray) const {
       continue;
     }
     if (intl && !intr) nodeIdx = nodeIdx + 1;
-    else if (!intl) nodeIdx = node.rchOffset;
+    else if (!intl) nodeIdx = nodeIdx + node.rchOffset;
     else {
+      int lchIdx = nodeIdx + 1;
+      int rchIdx = nodeIdx + node.rchOffset;
       if (ray.dir[node.axis] > 0.0) {
-        nodeIdx = nodeIdx + 1;
-        nodesToVisit[top++] = node.rchOffset;
+        nodeIdx = lchIdx;
+        nodesToVisit[top++] = rchIdx;
       } else {
-        nodeIdx = node.rchOffset;
-        nodesToVisit[top++] = nodeIdx + 1;
+        nodeIdx = rchIdx;
+        nodesToVisit[top++] = lchIdx;
       }
     }
   }

@@ -13,7 +13,7 @@
 
 namespace rdcraft {
 struct SurfaceInteraction;
-struct Sampler;
+class Sampler;
 struct ShapeSampleRecord {
   SurfacePatch pn;
   Real pdf{};
@@ -33,10 +33,15 @@ class Shape {
     Shape(const Transform* world2obj, const Transform* obj2world)
       : World2Obj(world2obj), Obj2World(obj2world) {
     }
-    /**
-     * sample a point on the surface of the shape given the position of the shape
-     * @return the coordinates of the sample point
-     */
+    bool needsTransform() const {
+      return World2Obj != nullptr;
+    }
+    const Transform* transformToObj() const {
+      return World2Obj;
+    }
+    const Transform* transformToWorld() const {
+      return Obj2World;
+    }
     virtual ShapeSampleRecord sample(Sampler& sampler) const = 0;
     virtual void intersect(const Ray& ray,
                            std::optional<SurfaceInteraction>& interaction) const

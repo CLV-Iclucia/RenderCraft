@@ -46,8 +46,8 @@ void lbvhBuild(const MemoryManager<Primitive>& primitives,
                       std::vector<LBVHNode>& nodes);
 class LBVH : NonCopyable {
   public:
-    explicit LBVH(MemoryManager<Primitive>&& primitives)
-      : primitives(std::move(primitives)) {
+    explicit LBVH(MemoryManager<Primitive>&& _primitives)
+      : primitives(std::move(_primitives)) {
       ASSERT(!primitives.empty(), "primitives is empty");
       lbvhBuild(primitives, nodes);
     }

@@ -21,6 +21,7 @@
 #include <format>
 
 namespace rdcraft {
+
 static std::map<std::string, Material*> materialRef;
 // since AreaLight can apply to different shapes
 // we only map the other members, and construct the light when parsing the shape
@@ -32,7 +33,9 @@ static MemoryPool<Transform> transforms;
 static MemoryPool<Mesh, 8> meshes;
 static std::unique_ptr<EnvMap> envMap{};
 static bool hasEnvMap = false;
-
+// sadly, this parser fails to compile correctly on my machine
+// I have to use hard-coded scene
+#ifndef USE_HARD_CODED_SCENE
 // implement a function that splits a string by a given regex
 std::vector<std::string> split(const std::string& str, const std::regex& re) {
   std::sregex_token_iterator first{str.begin(), str.end(), re, -1}, last;
@@ -416,4 +419,13 @@ loadScene(const char* file_path) {
   scene->pr = std::make_unique<Aggregate>(std::move(primitives));
   return std::make_tuple(std::move(scene), std::move(integrator));
 }
+#else
+
+std::tuple<std::unique_ptr<Scene>, std::unique_ptr<Integrator>> hardCodedScene() {
+
+  auto integrator = std::make_unique<PathTracer>();
+
+}
+
+#endif
 } // namespace rdcraft

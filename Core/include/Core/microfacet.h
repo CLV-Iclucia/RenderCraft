@@ -1,8 +1,7 @@
 #ifndef RENDERCRAFT_MICROFACET_H
 #define RENDERCRAFT_MICROFACET_H
+#include <Core/texture.h>
 #include <utility>
-#include <texture.h>
-
 #include <optional>
 
 namespace rdcraft {
@@ -12,13 +11,12 @@ struct BxdfSampleRecord {
   Real pdf;
 };
 struct Microfacet {
-  public:
-    virtual Real NormalDistribution(Real, const Vec2& uv) const = 0;
-    virtual std::optional<BxdfSampleRecord> sample(const Vec2&, Sampler&) const
-    = 0;
-    virtual Real SmithMonoShadow(Real, const Vec2&) const = 0;
-    virtual Real ShadowMasking(Real, Real, const Vec2&) const = 0;
-    virtual ~Microfacet();
+  virtual Real NormalDistribution(Real, const Vec2& uv) const = 0;
+  virtual std::optional<BxdfSampleRecord> sample(const Vec2&, Sampler&) const
+  = 0;
+  virtual Real SmithMonoShadow(Real, const Vec2&) const = 0;
+  virtual Real ShadowMasking(Real, Real, const Vec2&) const = 0;
+  virtual ~Microfacet();
 };
 
 class TrowbridgeModel : public Microfacet {

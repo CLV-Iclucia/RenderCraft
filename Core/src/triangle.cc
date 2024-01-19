@@ -4,6 +4,7 @@
 #include <Core/utils.h>
 #include <Core/interaction.h>
 #include <Core/mesh.h>
+#include <Core/sampler.h>
 
 namespace rdcraft {
 static bool insideTriangle(const Vec3& p, const Vec3& a, const Vec3& b,
@@ -63,11 +64,18 @@ bool Triangle::intersect(const Ray& ray) const {
   return true;
 }
 
+static Vec3 uniformSampleTriangle(const Vec3& a, const Vec3& b, const Vec3& c,
+                                  Sampler& sampler) {
+  Real u = std::sqrt(sampler.sample());
+  Real v = sampler.sample();
+  return (1.0 - u) * a + u * (1.0 - v) * b + u * v * c;
+}
+
 ShapeSampleRecord Triangle::sample(Sampler& sampler) const {
   Vec3 a = mesh->vertices[idx[0]];
   Vec3 b = mesh->vertices[idx[1]];
   Vec3 c = mesh->vertices[idx[2]];
-  Vec3 p = uniformSampleTriangle(a, b, c);
+  Vec3 p = uniformSampleTriangle(a, b, c, sampler);
   Real pdf = 1.0 / surfaceArea();
   return {{p, normalize(cross(b - a, c - a))}, pdf};
 }

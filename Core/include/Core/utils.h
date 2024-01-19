@@ -45,13 +45,16 @@ inline T epsilon() {
   else return static_cast<T>(0);
 }
 
-Vec3 uniformSampleSphere() {
+inline Vec3 uniformSampleSphere() {
 }
 
-Vec3 cosWeightedSampleHemisphere() {
+inline Vec3 cosWeightedSampleHemisphere() {
 }
 
-Mat3 constructFrame(const Vec3& N) {
+inline Mat3 constructFrame(const Vec3& N) {
+  Vec3 T = normalize(cross(N, Vec3(0, 1, 0)));
+  Vec3 B = normalize(cross(N, T));
+  return Mat3(T, B, N);
 }
 
 inline Real computeGeometry(const SurfacePatch& A, const SurfacePatch& B) {

@@ -8,12 +8,18 @@ namespace rdcraft {
 class Primitive;
 
 struct Interaction {
+  Interaction(const Vec3& pos, const Primitive* pr)
+    : pos(pos), pr(pr) {
+  }
   Vec3 pos;
   const Primitive* pr = nullptr;
-  virtual ~Interaction();
+  virtual ~Interaction() = default;
 };
 
-struct SurfaceInteraction : Interaction {
+struct SurfaceInteraction final : Interaction {
+  SurfaceInteraction(const Vec2& uv, const Vec3& pos, const Vec3& normal)
+    : Interaction(pos, nullptr), normal(normal), uv(uv) {
+  }
   Vec3 normal;
   Vec2 uv;
 };
