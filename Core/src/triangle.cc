@@ -30,7 +30,7 @@ void Triangle::intersect(const Ray& ray,
   Vec3 ac = c - a;
   Vec3 p_vec = cross(ray.dir, ac);
   Real det = dot(ab, p_vec);
-  if (det < epsilon<Real>())
+  if (det < EPS)
     return static_cast<void>(interaction = std::nullopt);
   Real inv_det = 1.0 / det;
   Vec3 t_vec = ray.orig - a;
@@ -53,7 +53,7 @@ bool Triangle::intersect(const Ray& ray) const {
   Vec3 ac = c - a;
   Vec3 p_vec = cross(ray.dir, ac);
   Real det = dot(ab, p_vec);
-  if (det < epsilon<Real>()) return false;
+  if (det < EPS) return false;
   Real inv_det = 1.0 / det;
   Vec3 t_vec = ray.orig - a;
   Real u = dot(t_vec, p_vec) * inv_det;

@@ -15,7 +15,7 @@ struct PhaseFunctionSampleRecord {
 
 class PhaseFunction {
   public:
-    virtual Real p(const Vec3& wo, const Vec3& wi) const = 0;
+    virtual Spectrum eval(const Vec3& wo, const Vec3& wi) const = 0;
     virtual void sample(const Vec3& wo,
                         Sampler& sampler,
                         std::optional<PhaseFunctionSampleRecord>& pRec) const =
@@ -24,15 +24,15 @@ class PhaseFunction {
     virtual ~PhaseFunction() = default;
 };
 
-class HenyeyGreenstein : public PhaseFunction {
+class HenyeyGreenstein final : public PhaseFunction {
   public:
-    explicit HenyeyGreenstein(Real g)
-      : g(g) {
+    explicit HenyeyGreenstein(Real _g)
+      : g(_g) {
     }
-    Real p(const Vec3& wo, const Vec3& wi) const override {
+    Spectrum eval(const Vec3& wo, const Vec3& wi) const override {
       Real cosTheta = dot(wo, wi);
-      return (1.0 - g * g) / (4.0 * PI * pow(1.0 + g * g - 2.0 * g * cosTheta,
-                                             1.5));
+      return Spectrum(
+          (1.0 - g * g) / (PI4 * pow(1.0 + g * g - 2.0 * g * cosTheta, 1.5)));
     }
     void sample(const Vec3& wo,
                 Sampler& sampler,
@@ -51,8 +51,8 @@ class HenyeyGreenstein : public PhaseFunction {
       if (sampler.sample() <= 0.5) sinTheta = -sinTheta;
       Real phi = 2 * PI * sampler.sample();
       pRec->wi = Vec3(sinTheta * std::cos(phi),
-                     sinTheta * std::sin(phi),
-                     cosTheta);
+                      sinTheta * std::sin(phi),
+                      cosTheta);
       pRec->pdf = u;
     }
     Real pdfSample(const Vec3& wo, const Vec3& wi) const override {

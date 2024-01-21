@@ -21,26 +21,41 @@ struct LightSampleRecord {
 
 // resource management: shapes are managed by Primitives
 // others are directly managed by Scene using unique_ptr and STL
-// Textures are somewhat difficult to handle, for now we directly instantiate Texture<Vec3> and Texture<Real>
-// we can do this because almost all the objects live as long as Scene
+// Textures are somewhat difficult to handle, however if there is no recursive
+// texture referencing then we can use smart ptr to manage them
+// and recursive texture is usually not a good idea
+// we can do all these because almost all the objects live as long as Scene
 struct Scene : NonCopyable {
   std::unique_ptr<Camera> camera;
   std::unique_ptr<Aggregate> pr;
   std::unique_ptr<EnvMap> envMap;
-  MemoryManager<Light> lights;
-  MemoryManager<Material> materials;
+  PolymorphicVector<Light> lights;
+  PolymorphicVector<Material> materials;
+  PolymorphicVector<Medium> media;
   MemoryPool<Transform> transforms;
-  MemoryManager<Medium> media;
   MemoryPool<Mesh> meshes;
   Real worldBoundRadius = 1e4;
   mutable std::unique_ptr<Sampler> sampler;
   DiscreteDistribution lightDistribution;
   void buildLightDistribution() {
     std::vector<Real> weights;
-    for (const auto& light : lights.objects())
+    int i = 0;
+    for (const auto& light : lights.objects()) {
       weights.push_back(light->power());
-    weights.push_back(envMap->power());
+      lightIndices[light.get()] = i++;
+    }
+    if (envMap) {
+      weights.push_back(envMap->power());
+      lightIndices[envMap.get()] = i++;
+    }
     lightDistribution.buildFromWeights(weights);
+  }
+  template <typename T>
+  T epsilon() const {
+    return worldBoundRadius * std::numeric_limits<T>::epsilon();
+  }
+  bool spatiallyApproximate(const Vec3& a, const Vec3& b) const {
+    return distance(a, b) < epsilon<Real>();
   }
   LightSampleRecord sampleLight() const {
     auto [idx, p] = lightDistribution.sample();
@@ -49,8 +64,12 @@ struct Scene : NonCopyable {
     return {lights(idx), p};
   }
   Real probSampleLight(Light* light) const {
-    return lightDistribution.prob(light - lights.objects().data()->get());
+    int idx = lightIndices.at(light);
+    return lightDistribution.prob(idx);
   }
+
+  private:
+    std::unordered_map<Light*, int> lightIndices;
 };
 }
 #endif

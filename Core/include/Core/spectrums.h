@@ -6,6 +6,7 @@
 #define RENDERCRAFT_SPECTRUMS_H
 
 #include <Core/core.h>
+#include <cmath>
 #include <array>
 #include <vector>
 
@@ -27,9 +28,9 @@ inline Real xFit_1931(Real wavelength) {
   Real t3 = (wavelength - Real(501.1)) * ((wavelength < Real(501.1))
                                             ? Real(0.0490)
                                             : Real(0.0382));
-  return 0.362 * exp(-Real(0.5) * t1 * t1) +
-         1.056 * exp(-Real(0.5) * t2 * t2) -
-         0.065 * exp(-Real(0.5) * t3 * t3);
+  return 0.362 * std::exp(-Real(0.5) * t1 * t1) +
+         1.056 * std::exp(-Real(0.5) * t2 * t2) -
+         0.065 * std::exp(-Real(0.5) * t3 * t3);
 }
 inline Real yFit_1931(Real wavelength) {
   Real t1 = (wavelength - Real(568.8)) * ((wavelength < Real(568.8))
@@ -38,8 +39,8 @@ inline Real yFit_1931(Real wavelength) {
   Real t2 = (wavelength - Real(530.9)) * ((wavelength < Real(530.9))
                                             ? Real(0.0613)
                                             : Real(0.0322));
-  return Real(0.821) * exp(-Real(0.5) * t1 * t1) +
-         Real(0.286) * exp(-Real(0.5) * t2 * t2);
+  return Real(0.821) * std::exp(-Real(0.5) * t1 * t1) +
+         Real(0.286) * std::exp(-Real(0.5) * t2 * t2);
 }
 inline Real zFit_1931(Real wavelength) {
   Real t1 = (wavelength - Real(437.0)) * ((wavelength < Real(437.0))
@@ -48,8 +49,8 @@ inline Real zFit_1931(Real wavelength) {
   Real t2 = (wavelength - Real(459.0)) * ((wavelength < Real(459.0))
                                             ? Real(0.0385)
                                             : Real(0.0725));
-  return 1.217 * exp(-Real(0.5) * t1 * t1) +
-         0.681 * exp(-Real(0.5) * t2 * t2);
+  return 1.217 * std::exp(-Real(0.5) * t1 * t1) +
+         0.681 * std::exp(-Real(0.5) * t2 * t2);
 }
 
 inline Vec3 XYZCoeff(Real wavelength) {

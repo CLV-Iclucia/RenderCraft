@@ -21,6 +21,8 @@ class Primitive {
     virtual AABB getAABB() const = 0;
     virtual Material* getMaterial() const = 0;
     virtual Light* getLight() const = 0;
+    virtual int externalMediumId() const = 0;
+    virtual int internalMediumId() const = 0;
     virtual void intersect(const Ray& ray,
                            std::optional<SurfaceInteraction>& interaction) const
     = 0;
@@ -65,12 +67,12 @@ class GeometryPrimitive final : public Primitive {
     bool isMediumInterface() const override {
       return surface.index() == 0;
     }
-    int externalMediumId() const {
+    int externalMediumId() const override {
       if (surface.index() != 2)
         ERROR("cannot be called on non-medium primitive.");
       return std::get<MediumInterface>(surface).external_id;
     }
-    int internalMediumId() const {
+    int internalMediumId() const override {
       if (surface.index() != 2)
         ERROR("cannot be called on non-medium primitive.");
       return std::get<MediumInterface>(surface).internal_id;
@@ -120,7 +122,7 @@ class TransformedPrimitive : Primitive {
 
 class Aggregate final : public Primitive {
   public:
-    explicit Aggregate(MemoryManager<Primitive>&& primitives)
+    explicit Aggregate(PolymorphicVector<Primitive>&& primitives)
       : lbvh(std::make_unique<LBVH>(std::move(primitives))) {
     }
     Material* getMaterial() const override {
@@ -129,6 +131,12 @@ class Aggregate final : public Primitive {
     Light* getLight() const override { ERROR("function shouldn't be called."); }
     bool isLight() const override { ERROR("function shouldn't be called."); }
     bool isMediumInterface() const override {
+      ERROR("function shouldn't be called.");
+    }
+    int externalMediumId() const override {
+      ERROR("function shouldn't be called.");
+    }
+    int internalMediumId() const override {
       ERROR("function shouldn't be called.");
     }
     void intersect(const Ray& ray,

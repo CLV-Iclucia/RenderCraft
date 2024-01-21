@@ -54,5 +54,19 @@ struct Transform {
     return Vec3(result.x, result.y, result.z);
   }
 };
+
+
+inline Transform translate(const Vec3& v) {
+  return Transform(glm::translate(identity(), v));
+}
+
+inline Transform scale(const Vec3& v) {
+  return Transform(glm::scale(identity(), v));
+}
+
+inline Transform rotate(Real angle, const Vec3& axis) {
+  return Transform(glm::rotate(identity(), angle, axis));
+}
+
 }
 #endif //RENDERCRAFT_TRANSFORM_H

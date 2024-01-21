@@ -31,7 +31,7 @@ struct Mesh : NonCopyable {
 };
 
 // this design follows pbrt
-struct Triangle final : public Shape {
+struct Triangle final : Shape {
   Triangle() = default;
   Triangle(const int* idx_, Mesh* mesh_)
     : idx(idx_), mesh(mesh_) {

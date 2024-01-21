@@ -22,17 +22,17 @@ class ImageIO : NonCopyable {
       pixels[2].resize(width * height, 0.0);
     }
     void write(int x, int y, const Spectrum& rgb) {
-      if (x >= 0 && x < width && y >= 0 && y < height) {
-        int index = y * width + x;
-        pixels[0][index] = rgb.r;
-        pixels[1][index] = rgb.g;
-        pixels[2][index] = rgb.b;
-      } else {
-        std::cerr << "Pixel coordinates out of bounds" << std::endl;
-      }
+      ASSERT(x >= 0 && x < width && y >= 0 && y < height,
+             "Image write out of bound.");
+      int index = y * width + x;
+      pixels[0][index] = rgb.r;
+      pixels[1][index] = rgb.g;
+      pixels[2][index] = rgb.b;
     }
 
     bool exportEXR(const char* filename) {
+      // Save image as EXR.
+      // modified from tinyexr example
       EXRHeader header;
       InitEXRHeader(&header);
 
@@ -51,7 +51,7 @@ class ImageIO : NonCopyable {
       image.height = height;
 
       header.num_channels = 3;
-      std::array<EXRChannelInfo, 3> channelInfos;
+      std::array<EXRChannelInfo, 3> channelInfos{};
       header.channels = &(channelInfos.at(0));
       // Must be BGR(A) order, since most of EXR viewers expect this channel order.
       strncpy(header.channels[0].name, "B", 1);
@@ -60,8 +60,8 @@ class ImageIO : NonCopyable {
       header.channels[1].name[strlen("G")] = '\0';
       strncpy(header.channels[2].name, "R", 1);
       header.channels[2].name[strlen("R")] = '\0';
-      std::array<int, 3> pixel_types;
-      std::array<int, 3> requested_pixel_types;
+      std::array<int, 3> pixel_types{};
+      std::array<int, 3> requested_pixel_types{};
       header.pixel_types = &(pixel_types.at(0));
       header.requested_pixel_types = &(requested_pixel_types.at(0));
       for (int i = 0; i < header.num_channels; i++) {
@@ -81,7 +81,8 @@ class ImageIO : NonCopyable {
   private:
     int width;
     int height;
-    std::array<std::vector<float>, 3> pixels; // Storing RGB values as doubles (0.0 - 1.0)
+    std::array<std::vector<float>, 3> pixels;
+    // Storing RGB values as doubles (0.0 - 1.0)
 };
 }
 #endif //IMAGE_IO_H

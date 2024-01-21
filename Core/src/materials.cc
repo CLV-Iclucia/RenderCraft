@@ -60,20 +60,28 @@ std::optional<BxdfSampleRecord> Metal::sample(const ShadingInfo& si,
   return std::make_optional<BxdfSampleRecord>(ret, bRec->pdf);
 }
 
+Real Metal::pdfSample(const ShadingInfo& si, const Vec3& wi) const {
+  // evaluate the pdf of sample direction wi, in solid angle measure
+  return {};
+}
+
 std::optional<BxdfSampleRecord> Lambertian::sample(
     const ShadingInfo& si, Sampler& sampler) const {
   if (si.wo.z < 0.0)
     return std::nullopt;
-  Vec3 ret = cosWeightedSampleHemisphere();
+  Vec3 ret = cosWeightedSampleHemisphere(sampler);
   Real pdf = std::max(ret.z, 0.0) / PI;
   return std::make_optional<BxdfSampleRecord>(ret, pdf);
+}
+
+Real Lambertian::pdfSample(const ShadingInfo& si, const Vec3& wi) const {
+  return PI2_INV;
 }
 
 Spectrum Lambertian::computeScatter(const ShadingInfo& si) const {
   if (si.wo.z < 0.0)
     return {};
-  else
-    return albedo->eval(si.uv) * PI_INV;
+  return albedo->eval(si.uv) * PI_INV;
 }
 
 static Real Fresnel(Real cosThetaO, Real eta) {
@@ -122,6 +130,10 @@ std::optional<BxdfSampleRecord> Dieletrics::sample(
   if (inside)
     refract_wi.z = -refract_wi.z;
   return std::make_optional<BxdfSampleRecord>(refract_wi, pdf);
+}
+
+Real Dieletrics::pdfSample(const ShadingInfo& si, const Vec3& wi) const {
+  return {};
 }
 
 Spectrum Dieletrics::computeScatter(const ShadingInfo& si) const {

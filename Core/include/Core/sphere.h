@@ -3,6 +3,7 @@
 #include <Core/ray.h>
 #include <Core/shape.h>
 #include <Core/utils.h>
+#include <Core/sampler.h>
 
 namespace rdcraft {
 class Sphere final : public Shape {
@@ -17,7 +18,7 @@ class Sphere final : public Shape {
     bool intersect(const Ray& ray) const override;
     AABB getAABB() const override { return {Vec3{-R, -R, -R}, Vec3{R, R, R}}; }
     ShapeSampleRecord sample(Sampler& sampler) const override {
-      Vec3 ret = uniformSampleSphere();
+      Vec3 ret = uniformSampleSphere(sampler);
       return {{ret * R, ret}, PI4_INV};
     }
     Real pdfSample(const Vec3& p) const override {

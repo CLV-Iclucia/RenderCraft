@@ -9,26 +9,22 @@
 #include <Core/spectrums.h>
 #include <Core/sphere.h>
 #include <Core/utils.h>
-#include <Core/obj-loader.h>
 #include <Core/scene-parser.h>
+#include <Core/obj-loader.h>
 #include <Core/light.h>
 #include <algorithm>
-#include <cstring>
-#include <iostream>
 #include <map>
 #include <memory>
-#include <regex>
 #include <format>
 
 namespace rdcraft {
-
 static std::map<std::string, Material*> materialRef;
 // since AreaLight can apply to different shapes
 // we only map the other members, and construct the light when parsing the shape
 static std::map<std::string, Light*> lightRef;
-static MemoryManager<Light> lights;
-static MemoryManager<Material> materials;
-static MemoryManager<Primitive> primitives;
+static PolymorphicVector<Light> lights;
+static PolymorphicVector<Material> materials;
+static PolymorphicVector<Primitive> primitives;
 static MemoryPool<Transform> transforms;
 static MemoryPool<Mesh, 8> meshes;
 static std::unique_ptr<EnvMap> envMap{};
@@ -421,10 +417,81 @@ loadScene(const char* file_path) {
 }
 #else
 
-std::tuple<std::unique_ptr<Scene>, std::unique_ptr<Integrator>> hardCodedScene() {
+const Vec3 kCameraPos = Vec3(-5, 100, 0);
+const Vec3 kCameraTarget = Vec3(0, 100, 0);
+const Vec3 kCameraUp = Vec3(0, 1, 0);
+const Vec3 kLightPos = Vec3(500, 500, 0);
+const Real kLightRadius = 40;
+const Real kLightRadiance = 10.0;
+const Real kCboxAlbedo = 0.7;
+const std::string kCboxPath = std::format("{}/cbox/meshes/cbox_smallbox.obj",
+                                          RDCRAFT_SCENE_DIR);
+const Real kHGg = 0.8;
+const std::string kDensityVolTexPath = std::format("{}/media/density.vol",
+                                                   RDCRAFT_SCENE_DIR);
+const std::string kAlbedoVolTexPath = std::format("{}/media/albedo.vol",
+                                                  RDCRAFT_SCENE_DIR);
+const Vec3 kVolSize = Vec3(50, 50, 50);
+static std::unique_ptr<Camera> hardCodedCamera() {
+  auto camera = std::make_unique<Camera>();
+  camera->cameraToWorld = transforms.construct(
+      glm::lookAt(kCameraPos, kCameraTarget, kCameraUp));
+  camera->worldToCamera = transforms.
+      construct(camera->cameraToWorld->inverse());
+  camera->scrWidth = 100;
+  camera->scrHeight = 100;
+  camera->nx = 512;
+  camera->ny = 512;
+  camera->nearPlane = 1.0;
+  camera->farPlane = 1000.0;
+  camera->focalDistance = 1.0;
+  camera->spp = 256;
+  camera->filter = std::make_unique<BoxFilter>(0.5);
+  return camera;
+}
 
-  auto integrator = std::make_unique<PathTracer>();
-
+std::tuple<std::unique_ptr<Scene>, std::unique_ptr<Integrator>>
+hardCodedScene() {
+  auto integrator = std::make_unique<VolumetricPathTracer>();
+  auto scene = std::make_unique<Scene>();
+  scene->camera = hardCodedCamera();
+  Transform* lightTranslate = transforms.construct(translate(kLightPos));
+  Transform* lightInvTranslate = transforms.
+      construct(lightTranslate->inverse());
+  auto lightSphere = std::make_unique<Sphere>(kLightRadius, lightTranslate,
+                                              lightInvTranslate);
+  auto light = lights.construct<AreaLight>(lightSphere.get(),
+                                           Spectrum(kLightRadiance));
+  auto lightPrimitive = primitives.construct<GeometryPrimitive>(
+      lightSphere, light);
+  scene->lights = std::move(lights);
+  auto cboxMaterial = materials.construct<Lambertian>(Spectrum(kCboxAlbedo));
+  auto cboxMesh = meshes.construct();
+  if (!loadObj(kCboxPath, cboxMesh))
+    ERROR("loading obj file error.");
+  for (int i = 0; i < cboxMesh->triangleCount; i++) {
+    primitives.construct<GeometryPrimitive>(
+        std::make_unique<Triangle>(cboxMesh->indices.data() + 3 * i, cboxMesh),
+        cboxMaterial);
+  }
+  auto interface = MediumInterface(-1, 0);
+  auto HG = std::make_unique<HenyeyGreenstein>(kHGg);
+  auto densityTexture = std::make_unique<GridVolumeTexture<Spectrum>>(
+      kDensityVolTexPath.c_str());
+  auto albedoTexture = std::make_unique<GridVolumeTexture<Spectrum>>(
+      kAlbedoVolTexPath.c_str());
+  Medium* medium = scene->media.construct<HeterogeneousMedium>(
+      HG, densityTexture, albedoTexture, -kVolSize * 0.5, kVolSize);
+  auto smokeSphere =
+      std::make_unique<Sphere>(kVolSize.x * 0.5, nullptr, nullptr);
+  auto smokePrimitive = primitives.construct<GeometryPrimitive>(
+      smokeSphere, interface);
+  scene->lights = std::move(lights);
+  scene->materials = std::move(materials);
+  scene->pr = std::make_unique<Aggregate>(std::move(primitives));
+  scene->transforms = std::move(transforms);
+  scene->buildLightDistribution();
+  return std::make_tuple(std::move(scene), std::move(integrator));
 }
 
 #endif

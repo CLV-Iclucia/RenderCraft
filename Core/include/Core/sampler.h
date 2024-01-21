@@ -29,15 +29,19 @@ class Sampler {
 };
 
 struct DiscreteDistribution {
+  DiscreteDistribution() = default;
   explicit DiscreteDistribution(int n)
     : probabilities(n) {
+  }
+  explicit DiscreteDistribution(const std::vector<Real>& weights) {
+    buildFromWeights(weights);
   }
   void buildFromWeights(const std::vector<Real>& weights) {
     probabilities = weights;
     auto n = probabilities.size();
     alias.resize(n);
     std::vector<Real> scaledProbabilities = probabilities;
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < n; i++)
       scaledProbabilities[i] *= n;
     std::vector<int> small, large;
     for (int i = 0; i < n; ++i) {
@@ -85,8 +89,7 @@ struct DiscreteDistribution {
     Real pdf = probabilities[idx] * probabilities.size();
     if (randomReal() < pdf)
       return {idx, pdf};
-    else
-      return {alias[idx], pdf};
+    return {alias[idx], pdf};
   }
   Real prob(int idx) const {
     return probabilities[idx] * probabilities.size();
@@ -94,6 +97,26 @@ struct DiscreteDistribution {
   std::vector<Real> probabilities;
   std::vector<int> alias;
 };
+
+inline Vec3 uniformSampleSphere(Sampler& sampler) {
+  const Real phi = sampler.sample() * PI2;
+  const Real cosTheta = 1.0 - 2.0 * sampler.sample();
+  const Real sinTheta = std::sqrt(1.0 - cosTheta * cosTheta);
+  return Vec3(sinTheta * std::cos(phi), sinTheta * std::sin(phi), cosTheta);
+}
+
+//uniformly sample a point on a disk x^2+y^2=1
+inline Vec2 uniformSampleDisk(Sampler& sampler)
+{
+  const Real phi = sampler.sample() * PI2;
+  const Real R = std::sqrt(sampler.sample());
+  return Vec2(R * std::cos(phi), R * std::sin(phi));
+}
+
+inline Vec3 cosWeightedSampleHemisphere(Sampler& sampler) {
+  const Vec2 p = uniformSampleDisk(sampler);
+  return Vec3(p.x, p.y, std::sqrt(1 - p.x * p.x - p.y * p.y));
+}
 }
 
 #endif

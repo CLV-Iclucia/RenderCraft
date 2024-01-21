@@ -19,7 +19,7 @@ struct Microfacet {
   virtual ~Microfacet();
 };
 
-class TrowbridgeModel : public Microfacet {
+class TrowbridgeModel final : public Microfacet {
   public:
     explicit TrowbridgeModel(std::unique_ptr<Texture<Real, 2>> alpha)
       : alpha(std::move(alpha)) {

@@ -11,14 +11,14 @@
 
 namespace rdcraft {
 template <typename Base>
-class MemoryManager : NonCopyable {
+class PolymorphicVector : NonCopyable {
   public:
     // a copy constructor and a move constructor
-    MemoryManager() = default;
-    MemoryManager(MemoryManager&& other) noexcept {
+    PolymorphicVector() = default;
+    PolymorphicVector(PolymorphicVector&& other) noexcept {
       m_objects = std::move(other.m_objects);
     }
-    MemoryManager& operator=(MemoryManager&& rhs) noexcept {
+    PolymorphicVector& operator=(PolymorphicVector&& rhs) noexcept {
       m_objects = std::move(rhs.m_objects);
       return *this;
     }

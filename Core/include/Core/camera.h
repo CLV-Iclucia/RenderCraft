@@ -16,7 +16,7 @@ struct Camera {
   uint nx = 768, ny = 576;
   Transform* cameraToWorld = nullptr;
   Transform* worldToCamera = nullptr;
-  Real scrWidth = 4, scrHeight = 4, scrZ = -1;
+  Real scrWidth = 4, scrHeight = 4;
   Real focalDistance = 1000.0;
   Real nearPlane = 1e-2;
   Real farPlane = 1e4;

@@ -25,7 +25,7 @@ TEST(BVHTest, IntersectsWithSpheres) {
   spheresInfo.emplace_back(1.0, 1.0, 2.0, 0.0);
   spheresInfo.emplace_back(0.5, -2.0, 1.0, 0.0);
   spheresInfo.emplace_back(1.2, -1.5, -2.5, 0.0);
-  MemoryManager<Primitive> spheres{};
+  PolymorphicVector<Primitive> spheres{};
   MemoryPool<Transform> transforms{};
   for (const auto& info : spheresInfo) {
     auto transform = transforms.construct(Transform::translate(info.center));

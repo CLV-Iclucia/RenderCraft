@@ -5,7 +5,6 @@
 namespace rdcraft {
 struct Ray {
   Vec3 orig, dir;
-  int medium_id{-1};
   Real refractionRate{1.0};
   Ray() = default;
   Ray(const Vec3 &_orig, const Vec3 &_dir) : orig(_orig), dir(_dir) {}

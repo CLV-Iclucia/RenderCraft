@@ -8,22 +8,7 @@
 #include <gtest/gtest.h>
 
 namespace rdcraft {
-static bool intersectBBox(const AABB& bbox, const Ray& ray) {
-  const Vec3& orig = ray.orig;
-  const Vec3& dir = ray.dir;
-  const Vec3 invDir = 1.0 / dir;
-  const Vec3b dirIsNeg{dir[0] < 0.0, dir[1] < 0.0, dir[2] < 0.0};
-  Vec3 tMin = (lo(bbox) - orig) * invDir;
-  Vec3 tMax = (hi(bbox) - orig) * invDir;
-  if (dirIsNeg[0]) std::swap(tMin[0], tMax[0]);
-  if (dirIsNeg[1]) std::swap(tMin[1], tMax[1]);
-  if (dirIsNeg[2]) std::swap(tMin[2], tMax[2]);
-  Real t_in = std::max(std::max(tMin[0], tMin[1]), tMin[2]);
-  if (Real t_out = std::min(std::min(tMax[0], tMax[1]), tMax[2]);
-    t_in > t_out || t_out < 0.0)
-    return false;
-  return true;
-}
+
 // void BVH::recursiveBuild(std::unique_ptr<BVHNode>& o,
 //                          const MemoryManager<Primitive>& primitives,
 //                          int l,
@@ -124,7 +109,7 @@ struct LbvhRawNode {
 // [l, r)
 static void lbvhRecursiveBuild(std::unique_ptr<LbvhRawNode>& o,
                                const std::vector<MortonPrimitive>& mp,
-                               const MemoryManager<Primitive>& primitives,
+                               const PolymorphicVector<Primitive>& primitives,
                                int l, int r, int depth) {
   ASSERT_LT(l, r);
   if (o == nullptr)
@@ -179,7 +164,7 @@ static void lbvhFlatten(const std::unique_ptr<LbvhRawNode>& o,
   nodes[currentIdx].rchOffset = ltr_end + 1 - currentIdx;
 }
 
-void lbvhBuild(const MemoryManager<Primitive>& primitives,
+void lbvhBuild(const PolymorphicVector<Primitive>& primitives,
                std::vector<LBVHNode>& nodes) {
   std::vector<LbvhBuildingInfo> buildingInfos;
   std::vector<MortonPrimitive> mortonPrimitives;

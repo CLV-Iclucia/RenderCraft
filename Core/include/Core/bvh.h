@@ -42,11 +42,11 @@ struct LBVHNode {
   }
 };
 
-void lbvhBuild(const MemoryManager<Primitive>& primitives,
+void lbvhBuild(const PolymorphicVector<Primitive>& primitives,
                       std::vector<LBVHNode>& nodes);
 class LBVH : NonCopyable {
   public:
-    explicit LBVH(MemoryManager<Primitive>&& _primitives)
+    explicit LBVH(PolymorphicVector<Primitive>&& _primitives)
       : primitives(std::move(_primitives)) {
       ASSERT(!primitives.empty(), "primitives is empty");
       lbvhBuild(primitives, nodes);
@@ -60,7 +60,7 @@ class LBVH : NonCopyable {
                        std::optional<SurfaceInteraction>& si) const;
     bool intersectLeaf(const Ray& ray, int leaf) const;
     std::vector<LBVHNode> nodes;
-    MemoryManager<Primitive> primitives;
+    PolymorphicVector<Primitive> primitives;
 };
 } // namespace rdcraft
 #endif

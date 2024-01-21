@@ -13,8 +13,8 @@
 
 namespace rdcraft {
 // this is left for BDPT
-struct PathVertex {
-};
+// struct PathVertex {
+// };
 
 class Integrator : NonCopyable {
   public:
@@ -37,23 +37,32 @@ class PathTracer final : public Integrator {
     void render(const Scene* scene) const override;
 };
 
-class VolumePathTracer final : public Integrator {
+class VolumetricPathTracer final : public Integrator {
   struct RenderOptions {
-    const uint spp = 256;
+    const int maxDepth = -1;
+    const int rrDepth = 5;
+    const uint maxNullCollisions = 1000; // simply to control the rendering time
     std::string savingPath = "./output.exr";
     bool enableDisplayProcess = true;
     ///< whether to display the rendering process
     bool enableLogOutputs = false; ///< whether to output the rendering log
     // many more to be added
-  };
+  } opt;
 
   public:
     void render(const Scene* scene) const override;
+    Spectrum L(Ray&, const Scene* scene) const;
+
+  private:
+    Spectrum nee(const Ray& ray, int depth, int cur_medium_id,
+                 const Scene* scene) const;
+    Spectrum neeBxdf(const Ray& ray, int depth,
+                     const SurfaceInteraction& si,
+                     int cur_medium_id, const Scene* scene) const;
 };
 
 // I wish one day I could achieve this
-// that day will mark the
-class BidirPathTracer : public Integrator {
+class BidirPathTracer final : public Integrator {
   public:
     void render(const Scene* scene) const override;
 

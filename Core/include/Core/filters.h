@@ -17,10 +17,10 @@ class Filter {
     virtual ~Filter();
 };
 
-class BoxFilter : public Filter {
+class BoxFilter final : public Filter {
   public:
-    BoxFilter(Real window_x, Real window_y)
-      : rx(window_x), ry(window_y) {
+    BoxFilter(Real rx_, Real ry_)
+      : rx(rx_), ry(ry_) {
     }
     explicit BoxFilter(const Vec2& window)
       : rx(window.x), ry(window.y) {
@@ -40,7 +40,7 @@ class BoxFilter : public Filter {
 };
 
 // follows pbrt
-class GaussianFilter : public Filter {
+class GaussianFilter final : public Filter {
   public:
     GaussianFilter(Real alpha, Real rx, Real ry)
       : alpha(alpha), rx(rx), ry(ry) {
