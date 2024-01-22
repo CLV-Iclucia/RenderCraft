@@ -15,6 +15,9 @@ class PolymorphicVector : NonCopyable {
   public:
     // a copy constructor and a move constructor
     PolymorphicVector() = default;
+    explicit PolymorphicVector(int size) {
+      m_objects.reserve(size);
+    }
     PolymorphicVector(PolymorphicVector&& other) noexcept {
       m_objects = std::move(other.m_objects);
     }
@@ -57,6 +60,8 @@ class PolymorphicVector : NonCopyable {
     }
     bool empty() const { return m_objects.empty(); }
     int size() const { return m_objects.size(); }
+    std::vector<std::unique_ptr<Base>>& get() { return m_objects; }
+    const std::vector<std::unique_ptr<Base>>& get() const { return m_objects; }
 
   private:
     std::vector<std::unique_ptr<Base>> m_objects;

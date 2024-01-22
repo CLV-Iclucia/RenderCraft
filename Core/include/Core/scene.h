@@ -33,21 +33,28 @@ struct Scene : NonCopyable {
   PolymorphicVector<Material> materials;
   PolymorphicVector<Medium> media;
   MemoryPool<Transform> transforms;
-  MemoryPool<Mesh> meshes;
-  Real worldBoundRadius = 1e4;
+  MemoryPool<Mesh, 8> meshes;
+  Real worldBoundRadius = 1e8;
   mutable std::unique_ptr<Sampler> sampler;
   DiscreteDistribution lightDistribution;
   void buildLightDistribution() {
     std::vector<Real> weights;
     int i = 0;
+    Real totalPower = 0.0;
     for (const auto& light : lights.objects()) {
-      weights.push_back(light->power());
+      Real pw = light->power();
+      totalPower += pw;
+      weights.push_back(pw);
       lightIndices[light.get()] = i++;
     }
     if (envMap) {
+      Real pw = envMap->power();
       weights.push_back(envMap->power());
+      totalPower += pw;
       lightIndices[envMap.get()] = i++;
     }
+    std::ranges::transform(weights, weights.begin(),
+                           [totalPower](Real w) { return w / totalPower; });
     lightDistribution.buildFromWeights(weights);
   }
   template <typename T>
@@ -58,7 +65,7 @@ struct Scene : NonCopyable {
     return distance(a, b) < epsilon<Real>();
   }
   LightSampleRecord sampleLight() const {
-    auto [idx, p] = lightDistribution.sample();
+    auto [idx, p] = lightDistribution.sample(*sampler);
     if (idx == lights.size())
       return {nullptr, 1.0};
     return {lights(idx), p};

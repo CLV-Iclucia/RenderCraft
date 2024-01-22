@@ -25,13 +25,16 @@ struct Camera {
   std::unique_ptr<Filter> filter = nullptr;
   // generate a ray at random on pixel(x, y) in camera space
   // the orig is always at (0, 0, 0) in camera space
-  Ray generateRaySample(int x, int y) const {
-    Vec2 offset = filter->sample();
+  Ray sampleRay(Sampler& sampler, int x, int y) const {
+    Vec2 offset = filter->sample(sampler);
     Vec3 orig{};
-    Real spacing = scrWidth / nx;
-    Vec3 dir{((x + offset.x - nx) / 2) * spacing,
-             ((y + offset.y - ny) / 2) * spacing, nearPlane};
-    return {cameraToWorld->apply(orig), normalize(cameraToWorld->apply(dir))};
+    Real spacing_x = scrWidth / nx;
+    Real spacing_y = scrHeight / ny;
+    Vec3 scrPos{(x + 0.5 + offset.x) * spacing_x - 0.5 * scrWidth,
+             (y + 0.5 + offset.y) * spacing_y - 0.5 * scrHeight, -nearPlane};
+    if (!cameraToWorld)
+      return {orig, normalize(scrPos)};
+    return cameraToWorld->transform(Ray(orig, scrPos));
   }
 };
 }

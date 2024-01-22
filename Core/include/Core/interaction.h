@@ -28,10 +28,10 @@ struct SurfaceInteraction final : Interaction {
 
 struct ShadingInfo {
   Mat3 TBN;
-  Vec3 wo, wi{};
+  Vec3 local_wo, local_wi{};
   Vec2 uv;
-  ShadingInfo(const SurfaceInteraction& si, const Vec3& wo_)
-    : TBN(constructFrame(si.normal)), wo(TBN * wo_), uv(si.uv) {
+  ShadingInfo(const SurfaceInteraction& si, const Vec3& world_wo)
+    : TBN(constructFrame(si.normal)), local_wo(TBN * world_wo), uv(si.uv) {
   }
 };
 

@@ -7,18 +7,22 @@ static Real computeGeometry(const SurfacePatch& patch, const Vec3& pos) {
   Vec3 dif = pos - patch.p;
   Real dist = length(dif);
   dif /= dist;
+  assert(dist > 0.0);
   return std::max(0.0, dot(dif, patch.n)) / (dist * dist);
 }
 
 static void updateMedium(const SurfaceInteraction& si, const Ray& ray,
                          int& cur_medium_id) {
-  assert(si.pr->isMediumInterface());
-  int interior_medium_id = si.pr->internalMediumId();
-  int exterior_medium_id = si.pr->externalMediumId();
-  if (exterior_medium_id == interior_medium_id) return;
-  if (dot(ray.dir, si.normal) >= 0)
-    cur_medium_id = exterior_medium_id;
-  else cur_medium_id = interior_medium_id;
+  bool to_external = dot(ray.dir, si.normal) >= 0;
+  if (si.pr->isMediumInterface()) {
+    int interior_medium_id = si.pr->internalMediumId();
+    int exterior_medium_id = si.pr->externalMediumId();
+    if (exterior_medium_id == interior_medium_id) return;
+    if (to_external)
+      cur_medium_id = exterior_medium_id;
+    else
+      cur_medium_id = interior_medium_id;
+  }
 }
 
 // maybe my implementation of Path tracing is not that correct
@@ -38,6 +42,8 @@ Spectrum VolumetricPathTracer::nee(const Ray& ray, int depth, int cur_medium_id,
   Real pdfLight = pdfLightPoint * pLight;
   Real G = computeGeometry(lightPatch, ray.orig);
   Real pdf_delta = 1, pdf_ratio = 1.0;
+  if (G > 0.0)
+    do_nothing();
   while (true) {
     if (opt.maxDepth >= 0 && depth + neeDep >= opt.maxDepth)
       return {};
@@ -86,7 +92,9 @@ Spectrum VolumetricPathTracer::nee(const Ray& ray, int depth, int cur_medium_id,
       pdf_delta *= avg<Real, 3>(trans_pdf_delta);
     }
     neeRay.orig = si->pos;
-    if (!si->pr->isLight())
+    if (!si->pr->isLight() && !si->pr->isMediumInterface())
+      return {};
+    if (si->pr->isLight() && si->pr->getLight() != light)
       return {};
     if (scene->spatiallyApproximate(neeRay.orig, lightPatch.p)) {
       // we reach the light source, and we calc the contrib
@@ -99,6 +107,7 @@ Spectrum VolumetricPathTracer::nee(const Ray& ray, int depth, int cur_medium_id,
                  pdf_nee * pdf_nee + pdf_phase * pdf_phase);
       return L_nee * w;
     }
+    neeRay.orig += scene->epsilon<Real>() * neeRay.dir;
     updateMedium(*si, neeRay, cur_medium_id);
     neeDep++;
   }
@@ -114,10 +123,13 @@ Spectrum VolumetricPathTracer::neeBxdf(const Ray& ray, int depth,
   neeRay.dir = normalize(lightPatch.p - ray.orig);
   const Material* mat = si.pr->getMaterial();
   auto shading_info = ShadingInfo{si, -ray.dir};
+  shading_info.local_wi = shading_info.TBN * neeRay.dir;
   Spectrum nee_throughput = mat->computeScatter(shading_info);
   int neeDep = 0;
   Real pdfLight = pdfLightPoint * pLight;
   Real G = computeGeometry(lightPatch, ray.orig);
+  if (G > 0.0)
+    do_nothing();
   Real pdf_delta = 1, pdf_ratio = 1;
   updateMedium(si, neeRay, cur_medium_id);
   while (true) //we do a next event estimation
@@ -128,6 +140,8 @@ Spectrum VolumetricPathTracer::neeBxdf(const Ray& ray, int depth,
     scene->pr->intersect(neeRay, opt_si);
     if (opt_si) {
       if (cur_medium_id >= 0) {
+        if (G > 0)
+          do_nothing();
         Real t_hit = distance(opt_si->pos, neeRay.orig);
         int channel = floor(scene->sampler->sample() * 3);
         Spectrum sigma_m = scene->media(cur_medium_id)->getMajorant(neeRay);
@@ -138,6 +152,8 @@ Spectrum VolumetricPathTracer::neeBxdf(const Ray& ray, int depth,
           Real u = scene->sampler->sample();
           if (sigma_m[channel] <= 0.0) break;
           Real t = -log(1.0 - u) / sigma_m[channel];
+          if (G > 0)
+            do_nothing();
           if (t >= t_hit) {
             if (opt_si->pr->isMediumInterface()) {
               //it is a index-matching surface, we go through the interface
@@ -170,10 +186,14 @@ Spectrum VolumetricPathTracer::neeBxdf(const Ray& ray, int depth,
         pdf_delta *= avg<Real, 3>(trans_pdf_delta);
       }
       neeRay.orig = opt_si->pos;
-      if (!opt_si->pr->isMediumInterface() && !opt_si->pr->isLight())
+      if (!opt_si->pr->isLight() && !opt_si->pr->isMediumInterface())
+        return {};
+      if (opt_si->pr->isLight() && opt_si->pr->getLight() != light)
         return {};
       if (scene->spatiallyApproximate(neeRay.orig, lightPatch.p)) {
         // we reach the light source, and we calc the contrib
+        if (G > 0)
+          do_nothing();
         Real pdf_bsdf = mat->pdfSample(shading_info, neeRay.dir) * G *
                         pdf_delta;
         Real pdf_nee = pdfLight * pdf_ratio;
@@ -182,6 +202,7 @@ Spectrum VolumetricPathTracer::neeBxdf(const Ray& ray, int depth,
         Real w = pdf_nee * pdf_nee / (pdf_nee * pdf_nee + pdf_bsdf * pdf_bsdf);
         return L_nee * w;
       }
+      neeRay.orig += scene->epsilon<Real>() * neeRay.dir;
       updateMedium(*opt_si, neeRay, cur_medium_id);
       neeDep++;
     } else return {};
@@ -193,7 +214,6 @@ Spectrum VolumetricPathTracer::neeBxdf(const Ray& ray, int depth,
 // with MIS between next event estimation and phase function sampling
 // with surface lighting
 Spectrum VolumetricPathTracer::L(Ray& ray, const Scene* scene) const {
-  // Homework 2: implement this!
   int cur_medium_id = scene->camera->medium_id;
   Spectrum cur_path_throughput(1.0, 1.0, 1.0);
   int depth = 0;
@@ -247,6 +267,8 @@ Spectrum VolumetricPathTracer::L(Ray& ray, const Scene* scene) const {
             //it is a index-matching surface, we go through the interface
             depth++;
             updateMedium(*si, ray, cur_medium_id);
+            ray.orig += scene->epsilon<Real>() * ray.dir;
+            // avoid self-intersection, especially for medium interface
           } else {
             if (si->pr->isLight()) reach_light = true;
             else surface_lighting = true;
@@ -286,7 +308,10 @@ Spectrum VolumetricPathTracer::L(Ray& ray, const Scene* scene) const {
       if (si->pr->isLight()) reach_light = true;
       else if (!si->pr->isMediumInterface())
         surface_lighting = true;
-      else updateMedium(*si, ray, cur_medium_id);
+      else {
+        ray.orig += scene->epsilon<Real>() * ray.dir;
+        updateMedium(*si, ray, cur_medium_id);
+      }
     }
     if (scatter) {
       cur_path_throughput *= sigma_s;
@@ -308,18 +333,17 @@ Spectrum VolumetricPathTracer::L(Ray& ray, const Scene* scene) const {
       } else break;
     }
     if (reach_light) {
-      SurfacePatch lightPatch{si->pos, si->normal};
       if (never_scatter_or_reflect)
         L += cur_path_throughput * si->pr->getLight()->evalEmission(
-            lightPatch, -ray.dir);
+            patch, -ray.dir);
       else {
         Real G = computeGeometry(patch, si_nee_cache.pos);
         Real pdf_dir = pdf_delta * G * pdf_dir_cache;
-        Real pdf_nee = scene->probSampleLight(si_nee_cache.pr->getLight()) *
-                       si_nee_cache.pr->getLight()->pdfSample(patch);
+        Real pdf_nee = scene->probSampleLight(si->pr->getLight()) *
+                       si->pr->getLight()->pdfSample(patch);
         Real w = pdf_dir * pdf_dir / (pdf_dir * pdf_dir + pdf_nee * pdf_nee);
         L += cur_path_throughput * si->pr->getLight()->evalEmission(
-            lightPatch, -ray.dir) * w;
+            patch, -ray.dir) * w;
       }
       break;
     }
@@ -332,13 +356,14 @@ Spectrum VolumetricPathTracer::L(Ray& ray, const Scene* scene) const {
       si_nee_cache = *si;
       if (std::optional<BxdfSampleRecord> bRec = mat->sample(
           shading_info, *scene->sampler)) {
+        Vec3 world_wi = inverse(shading_info.TBN) * bRec->local_wi;
         Real bsdf_pdf = bRec->pdf;
         if (bsdf_pdf == 0.0) break;
-        shading_info.wi = bRec->wi;
+        shading_info.local_wi = bRec->local_wi;
         cur_path_throughput *= mat->computeScatter(shading_info) / bsdf_pdf;
         pdf_dir_cache = bsdf_pdf;
         pdf_delta = pdf_ratio = 1.0;
-        ray.dir = bRec->wi;
+        ray.dir = world_wi;
         updateMedium(*si, ray, cur_medium_id);
       } else break;
     }
@@ -353,19 +378,37 @@ Spectrum VolumetricPathTracer::L(Ray& ray, const Scene* scene) const {
 void VolumetricPathTracer::render(const Scene* scene) const {
   ImageIO image(scene->camera->nx, scene->camera->ny);
   int ny{static_cast<int>(scene->camera->ny)};
+  int nx{static_cast<int>(scene->camera->nx)};
   // use x as the inner loop, because that is how the image is stored
-  tbb::parallel_for(0, ny, [&](int j) {
-    for (int i = 0; i < scene->camera->nx; i++) {
+#ifdef NDEBUG
+  tbb::parallel_for (0, ny, [&](int j) {
+    for (int i = 0; i < nx; i++) {
       Vec3 radiance{};
       // we use non-splatting style since it is easier to code
       for (int k = 0; k < scene->camera->spp; k++) {
-        Ray ray{scene->camera->generateRaySample(i, j)};
+        Ray ray{scene->camera->sampleRay(*scene->sampler, i, j)};
         radiance += L(ray, scene);
       }
       radiance /= static_cast<Real>(scene->camera->spp);
-      image.write(i, j, radiance);
+      // because the image is flipped, we need to flip the y coordinate
+      image.write(i, ny - 1 - j, radiance);
     }
   });
+#else
+  for (int j = 0; j < ny; j++) {
+    for (int i = 0; i < nx; i++) {
+      Vec3 radiance{};
+      // we use non-splatting style since it is easier to code
+      for (int k = 0; k < scene->camera->spp; k++) {
+        Ray ray{scene->camera->sampleRay(*scene->sampler, i, j)};
+        radiance += L(ray, scene);
+      }
+      radiance /= static_cast<Real>(scene->camera->spp);
+      // because the image is flipped, we need to flip the y coordinate
+      image.write(i, ny - 1 - j, radiance);
+    }
+  }
+#endif
   printf("Finish rendering\n");
   image.exportEXR(opt.savingPath.c_str());
 }

@@ -6,6 +6,12 @@
 #include <string>
 #define USE_MODIFIED_LAJOLLA_LOADER
 namespace rdcraft {
+
+#ifdef USE_MODIFIED_LAJOLLA_LOADER
+bool loadObj(const std::string& filename, const Mat4& to_world, Mesh* mesh);
+#else
 bool loadObj(const std::string& filename, Mesh* mesh);
+#endif
 }
+
 #endif

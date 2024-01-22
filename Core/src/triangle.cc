@@ -28,21 +28,24 @@ void Triangle::intersect(const Ray& ray,
   const auto& c = mesh->vertices[idx[2]];
   Vec3 ab = b - a;
   Vec3 ac = c - a;
-  Vec3 p_vec = cross(ray.dir, ac);
+  Vec3 p_vec = glm::cross(ray.dir, ac);
   Real det = dot(ab, p_vec);
-  if (det < EPS)
+  if (det <= 0.0)
     return static_cast<void>(interaction = std::nullopt);
   Real inv_det = 1.0 / det;
   Vec3 t_vec = ray.orig - a;
   Real u = dot(t_vec, p_vec) * inv_det;
   if (u < 0.0 || u > 1.0) return static_cast<void>(interaction = std::nullopt);
-  Vec3 q_vec = cross(t_vec, ab);
+  Vec3 q_vec = glm::cross(t_vec, ab);
   Real v = dot(ray.dir, q_vec) * inv_det;
-  interaction->pos = u * a + v * b + (1.0 - u - v) * c;
-  interaction->normal = u * mesh->normals[idx[0]] + v * mesh->normals[idx[1]] +
-                        (1.0 - u - v) * mesh->normals[idx[2]];
-  interaction->uv = u * mesh->uvs[idx[0]] + v * mesh->uvs[idx[1]] + (
-                      1.0 - u - v) * mesh->uvs[idx[2]];
+  if (v < 0.0 || u + v > 1.0)
+    return static_cast<void>(interaction = std::nullopt);
+  Vec3 pos = u * b + v * c + (1.0 - u - v) * a;
+  Vec3 normal = u * mesh->normals[idx[1]] + v * mesh->normals[idx[2]] +
+                (1.0 - u - v) * mesh->normals[idx[0]];
+  Vec2 uv = u * mesh->uvs[idx[1]] + v * mesh->uvs[idx[2]] + (
+              1.0 - u - v) * mesh->uvs[idx[0]];
+  interaction.emplace(uv, pos, normal);
 }
 
 bool Triangle::intersect(const Ray& ray) const {
@@ -51,14 +54,14 @@ bool Triangle::intersect(const Ray& ray) const {
   const auto& c = mesh->vertices[idx[2]];
   Vec3 ab = b - a;
   Vec3 ac = c - a;
-  Vec3 p_vec = cross(ray.dir, ac);
+  Vec3 p_vec = glm::cross(ray.dir, ac);
   Real det = dot(ab, p_vec);
-  if (det < EPS) return false;
+  if (det <= 0.0) return false;
   Real inv_det = 1.0 / det;
   Vec3 t_vec = ray.orig - a;
   Real u = dot(t_vec, p_vec) * inv_det;
   if (u < 0.0 || u > 1.0) return false;
-  Vec3 q_vec = cross(t_vec, ab);
+  Vec3 q_vec = glm::cross(t_vec, ab);
   if (Real v = dot(ray.dir, q_vec) * inv_det; v < 0.0 || u + v > 1.0) return
       false;
   return true;

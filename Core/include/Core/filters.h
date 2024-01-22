@@ -6,15 +6,15 @@
 #define RENDERCRAFT_FILTER_H
 
 #include <Core/core.h>
-#include <Core/rand-gen.h>
 #include <Core/utils.h>
+#include <Core/sampler.h>
 
 namespace rdcraft {
 class Filter {
   public:
     virtual Real eval(Real x, Real y) const = 0;
-    virtual Vec2 sample() const = 0;
-    virtual ~Filter();
+    virtual Vec2 sample(Sampler& sampler) const = 0;
+    virtual ~Filter() = default;
 };
 
 class BoxFilter final : public Filter {
@@ -31,8 +31,8 @@ class BoxFilter final : public Filter {
     Real eval(Real x, Real y) const override {
       return 1.0;
     }
-    Vec2 sample() const override {
-      return Vec2(randomReal(-rx, rx), randomReal(-ry, ry));
+    Vec2 sample(Sampler& sampler) const override {
+      return Vec2(randomReal(sampler, -rx, rx), randomReal(sampler, -ry, ry));
     }
 
   protected:
@@ -50,9 +50,9 @@ class GaussianFilter final : public Filter {
       Real gy = gauss(alpha, y, ry);
       return gx * gy;
     }
-    Vec2 sample() const override {
-
+    Vec2 sample(Sampler& sampler) const override {
     }
+
   private:
     Real alpha = 1.0;
     Real rx = 1.0, ry = 1.0;

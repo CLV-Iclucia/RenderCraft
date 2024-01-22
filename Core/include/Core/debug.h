@@ -19,5 +19,7 @@ namespace rdcraft {
 #define CHECK_EQZ(a) ASSERT((a) == (0), "condition not satisfied")
 #define CHECK_NEZ(a) ASSERT((a) != (0), "condition not satisfied")
 
+inline void do_nothing() {}
+
 }
 #endif //RENDERCRAFT_CORE_INCLUDE_CORE_LOG_H_

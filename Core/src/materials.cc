@@ -32,42 +32,43 @@ Vec3 Metal::Fresnel(Real cosTheta) const {
 }
 
 Spectrum Metal::computeScatter(const ShadingInfo& si) const {
-  const auto& wo = si.wo;
-  const auto& wi = si.wi;
+  const auto& wo = si.local_wo;
+  const auto& wi = si.local_wi;
   if (wo.z < 0.0)
     return {};
-  Real cosThetaI {wi.z};
-  Real cosThetaO {wo.z};
+  Real cosThetaI{wi.z};
+  Real cosThetaO{wo.z};
   Vec3 H = normalize(wi + wo);
   Real cosThetaH = std::max(H[2], 0.0);
   Spectrum ret = 0.25 * Fresnel(std::min(dot(H, wo), 1.0)) *
-             bxdf->NormalDistribution(cosThetaH, si.uv) / cosThetaO *
-             bxdf->ShadowMasking(cosThetaI, cosThetaO, si.uv) / cosThetaI;
+                 bxdf->NormalDistribution(cosThetaH, si.uv) / cosThetaO *
+                 bxdf->ShadowMasking(cosThetaI, cosThetaO, si.uv) / cosThetaI;
   return ret;
 }
 
 std::optional<BxdfSampleRecord> Metal::sample(const ShadingInfo& si,
                                               Sampler& sampler) const {
-  const auto& wo = si.wo;
-  auto bRec = bxdf->sample(si.uv, sampler);
+  const auto& wo = si.local_wo;
+  auto bRec = bxdf->sampleNormal(si.uv, sampler);
   if (!bRec) return std::nullopt;
-  const auto& H = bRec->wi;
+  const auto& H = bRec->local_wi;
   Real cosTheta{dot(H, wo)};
   Vec3 ret = H * 2.0 * cosTheta - wo;
   if (cosTheta < 0.0 || ret.z < 0.0)
     return std::nullopt;
-  bRec->pdf *= 4.0 * cosTheta;
+  bRec->pdf /= 4.0 * cosTheta;
   return std::make_optional<BxdfSampleRecord>(ret, bRec->pdf);
 }
 
 Real Metal::pdfSample(const ShadingInfo& si, const Vec3& wi) const {
-  // evaluate the pdf of sample direction wi, in solid angle measure
-  return {};
+  Vec3 local_wi = si.TBN * wi;
+  Vec3 H = (si.local_wo + wi) * 0.5;
+  return bxdf->pdfSample(H, si.uv) / (4.0 * dot(si.local_wo, H));
 }
 
 std::optional<BxdfSampleRecord> Lambertian::sample(
     const ShadingInfo& si, Sampler& sampler) const {
-  if (si.wo.z < 0.0)
+  if (si.local_wo.z < 0.0)
     return std::nullopt;
   Vec3 ret = cosWeightedSampleHemisphere(sampler);
   Real pdf = std::max(ret.z, 0.0) / PI;
@@ -75,11 +76,13 @@ std::optional<BxdfSampleRecord> Lambertian::sample(
 }
 
 Real Lambertian::pdfSample(const ShadingInfo& si, const Vec3& wi) const {
-  return PI2_INV;
+  // cosine weighted hemisphere sampling
+  Real cosTheta = (si.TBN * wi).z;
+  return std::max(cosTheta, 0.0) * PI_INV;
 }
 
 Spectrum Lambertian::computeScatter(const ShadingInfo& si) const {
-  if (si.wo.z < 0.0)
+  if (si.local_wo.z < 0.0)
     return {};
   return albedo->eval(si.uv) * PI_INV;
 }
@@ -99,21 +102,20 @@ static Real Fresnel(Real cosThetaO, Real eta) {
 
 std::optional<BxdfSampleRecord> Dieletrics::sample(
     const ShadingInfo& si, Sampler& sampler) const {
-  const auto& wo = si.wo;
+  const auto& wo = si.local_wo;
   bool inside = wo.z < 0.0;
   // Real eta = inside ? interface.etaB / etaA : etaA / etaB; // eta = etaI / etaO
   Real eta = 1.0;
   Vec3 Wo = wo; // we flip the wo, it is just like we flip the z-axis
   if (inside)
     Wo.z = -Wo.z;
-  auto optRec = bxdf->sample(si.uv, sampler);
+  auto optRec = bxdf->sampleNormal(si.uv, sampler);
   if (!optRec) return std::nullopt;
-  Vec3 H{optRec->wi};
+  Vec3 H{optRec->local_wi};
   Real pdf{optRec->pdf};
   Real etaSqr = eta * eta;
   Real cosTheta = dot(H, Wo);
-  Real Fr = Fresnel(cosTheta, eta);
-  if (sampler.get() < Fr) {
+  if (Real Fr = Fresnel(cosTheta, eta); sampler.get() < Fr) {
     Vec3 reflect_wi = H * 2.0 * cosTheta - Wo;
     if (reflect_wi.z < 0.0)
       return std::nullopt;
@@ -123,7 +125,7 @@ std::optional<BxdfSampleRecord> Dieletrics::sample(
   Vec3 refract_wi = normalize(refract(Wo, H, eta));
   if (refract_wi.z > 0.0)
     // in this case it is only possible to generate a reflection light
-      return std::nullopt;
+    return std::nullopt;
   Real cosThetaI = dot(H, refract_wi);
   Real tmp = cosTheta + eta * cosThetaI;
   pdf /= 2.0 * tmp * tmp / (etaSqr * std::abs(cosThetaI));
@@ -133,15 +135,29 @@ std::optional<BxdfSampleRecord> Dieletrics::sample(
 }
 
 Real Dieletrics::pdfSample(const ShadingInfo& si, const Vec3& wi) const {
-  return {};
+  const auto& wo = si.local_wo;
+  bool inside = wo.z < 0.0;
+  // Real eta = inside ? etaB / etaA : etaA / etaB; // eta = etaI / etaO
+  Real eta = inside ? refraction_rate : 1.0 / refraction_rate;
+  Vec3 Wo = wo; // we flip the wo, it is just like we flip the z-axis
+  if (inside)
+    Wo.z = -Wo.z;
+  Vec3 H = normalize(Wo + wi * eta);
+  Real cosTheta = dot(H, Wo);
+  Real etaSqr = eta * eta;
+  Real cosThetaI = dot(H, wi);
+  Real tmp = cosTheta + eta * cosThetaI;
+  Real pdf = bxdf->pdfSample(H, si.uv) / (
+               2.0 * tmp * tmp / (etaSqr * cosThetaI));
+  return pdf;
 }
 
 Spectrum Dieletrics::computeScatter(const ShadingInfo& si) const {
-  bool inside = si.wo.z < 0.0;
+  bool inside = si.local_wo.z < 0.0;
   // TODO: fix this
   // Real eta = inside ? etaB / etaA : etaA / etaB; // eta = etaI / etaO
   Real eta = 1.0;
-  Vec3 Wo{si.wo}, Wi{si.wi};
+  Vec3 Wo{si.local_wo}, Wi{si.local_wi};
   if (inside) {
     Wi.z = -Wi.z;
     Wo.z = -Wo.z;

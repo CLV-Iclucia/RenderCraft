@@ -319,7 +319,7 @@ bool loadObj(const std::string& filename, const Mat4& to_world, Mesh* mesh) {
   if (mesh->normals.size() == 0) {
     mesh->normals = compute_normal(mesh->vertices, mesh->indices);
   }
-
+  mesh->triangleCount = mesh->indices.size() / 3;
   return mesh;
 }
 

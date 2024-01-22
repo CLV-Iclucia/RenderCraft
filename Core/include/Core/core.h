@@ -4,7 +4,7 @@
 
 #ifndef RENDERCRAFT_TYPES_H
 #define RENDERCRAFT_TYPES_H
-
+#define GLM_ROW_MAJOR
 #include <glm/glm.hpp>
 #include <tuple>
 namespace rdcraft {

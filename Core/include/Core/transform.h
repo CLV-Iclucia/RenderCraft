@@ -38,11 +38,21 @@ struct Transform {
     CHECK_NEZ(result.w);
     v = Vec3(result.x / result.w, result.y / result.w, result.z / result.w);
   }
+  SurfacePatch transform(const SurfacePatch& patch) const {
+    return {apply(patch.p), transNormal(patch.n)};
+  }
   AABB transform(const AABB& aabb) const {
-    return {apply(lo(aabb)), apply(hi(aabb))};
+    Vec3 transformed_lo = apply(lo(aabb));
+    Vec3 transformed_hi = apply(hi(aabb));
+    Vec3 real_lo = min<Real, 3>(transformed_lo, transformed_hi);
+    Vec3 real_hi = max<Real, 3>(transformed_lo, transformed_hi);
+    return {real_lo, real_hi};
   }
   Ray transform(const Ray& ray) const {
-    return {apply(ray.orig), apply(ray.dir)};
+    Vec3 transformed_orig = apply(ray.orig);
+    // remove the affine part of the transform
+    Vec3 transformed_dir = apply(ray.orig + ray.dir) - transformed_orig;
+    return {transformed_orig, normalize(transformed_dir)};
   }
   Transform inverse() const {
     return Transform(glm::inverse(trans));

@@ -7,13 +7,14 @@
 namespace rdcraft {
 class Sampler;
 struct BxdfSampleRecord {
-  Vec3 wi;
+  Vec3 local_wi;
   Real pdf;
 };
 struct Microfacet {
   virtual Real NormalDistribution(Real, const Vec2& uv) const = 0;
-  virtual std::optional<BxdfSampleRecord> sample(const Vec2&, Sampler&) const
+  virtual std::optional<BxdfSampleRecord> sampleNormal(const Vec2&, Sampler&) const
   = 0;
+  virtual Real pdfSample(const Vec3& H, const Vec2& uv) const = 0;
   virtual Real SmithMonoShadow(Real, const Vec2&) const = 0;
   virtual Real ShadowMasking(Real, Real, const Vec2&) const = 0;
   virtual ~Microfacet();
@@ -25,7 +26,8 @@ class TrowbridgeModel final : public Microfacet {
       : alpha(std::move(alpha)) {
     }
     std::optional<BxdfSampleRecord>
-    sample(const Vec2&, Sampler&) const override;
+    sampleNormal(const Vec2&, Sampler&) const override;
+    Real pdfSample(const Vec3& H, const Vec2& uv) const override;
     Real NormalDistribution(Real, const Vec2&) const override;
     Real SmithMonoShadow(Real, const Vec2&) const override;
     Real ShadowMasking(Real, Real, const Vec2&) const override;

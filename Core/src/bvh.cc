@@ -8,7 +8,6 @@
 #include <gtest/gtest.h>
 
 namespace rdcraft {
-
 // void BVH::recursiveBuild(std::unique_ptr<BVHNode>& o,
 //                          const MemoryManager<Primitive>& primitives,
 //                          int l,
@@ -111,7 +110,7 @@ static void lbvhRecursiveBuild(std::unique_ptr<LbvhRawNode>& o,
                                const std::vector<MortonPrimitive>& mp,
                                const PolymorphicVector<Primitive>& primitives,
                                int l, int r, int depth) {
-  ASSERT_LT(l, r);
+  ASSERT(l < r, "empty range");
   if (o == nullptr)
     o = std::make_unique<LbvhRawNode>();
   if (depth == 0 || r - l == 1) {
@@ -122,8 +121,8 @@ static void lbvhRecursiveBuild(std::unique_ptr<LbvhRawNode>& o,
       o->bbox = mergeAABB(o->bbox, primitives(i)->getAABB());
     return;
   }
-  if (int bitMask = 1 << depth; mp[l].mortonCode & bitMask == mp[r - 1].mortonCode &
-                                bitMask) {
+  if (int bitMask = 1 << depth; (mp[l].mortonCode & bitMask) == (mp[r - 1].
+                                mortonCode & bitMask)) {
     o->start = l;
     o->end = r;
     lbvhRecursiveBuild(o, mp, primitives, l, r, depth - 1);
@@ -132,7 +131,7 @@ static void lbvhRecursiveBuild(std::unique_ptr<LbvhRawNode>& o,
     int searchEnd = r - 1;
     while (searchStart < searchEnd) {
       int mid = (searchStart + searchEnd + 1) >> 1;
-      if (mp[mid].mortonCode & bitMask == mp[l].mortonCode & bitMask)
+      if ((mp[mid].mortonCode & bitMask) == (mp[l].mortonCode & bitMask))
         searchStart = mid;
       else
         searchEnd = mid - 1;
@@ -164,18 +163,18 @@ static void lbvhFlatten(const std::unique_ptr<LbvhRawNode>& o,
   nodes[currentIdx].rchOffset = ltr_end + 1 - currentIdx;
 }
 
-void lbvhBuild(const PolymorphicVector<Primitive>& primitives,
-               std::vector<LBVHNode>& nodes) {
+void LBVH::lbvhBuild(PolymorphicVector<Primitive>&& unsortedPrimitives,
+                     std::vector<LBVHNode>& nodes) {
   std::vector<LbvhBuildingInfo> buildingInfos;
   std::vector<MortonPrimitive> mortonPrimitives;
-  buildingInfos.reserve(primitives.size());
-  mortonPrimitives.reserve(primitives.size());
-  AABB aggregateBbox(primitives(0)->getAABB());
-  for (int i = 1; i < primitives.size(); i++)
-    aggregateBbox = mergeAABB(aggregateBbox, primitives(i)->getAABB());
+  buildingInfos.resize(unsortedPrimitives.size());
+  mortonPrimitives.resize(unsortedPrimitives.size());
+  AABB aggregateBbox(unsortedPrimitives(0)->getAABB());
+  for (int i = 1; i < unsortedPrimitives.size(); i++)
+    aggregateBbox = mergeAABB(aggregateBbox, unsortedPrimitives(i)->getAABB());
   // for all Primitives to compute their centroids and init bounding box
-  for (int i = 1; i < primitives.size(); i++) {
-    buildingInfos[i].bbox = primitives(i)->getAABB();
+  for (int i = 0; i < unsortedPrimitives.size(); i++) {
+    buildingInfos[i].bbox = unsortedPrimitives(i)->getAABB();
     Vec3 centroid = (lo(buildingInfos[i].bbox) + hi(buildingInfos[i].bbox)) *
                     0.5;
     buildingInfos[i].centroid = centroid;
@@ -191,12 +190,18 @@ void lbvhBuild(const PolymorphicVector<Primitive>& primitives,
             static_cast<uint64_t>(
               reScaledCentroid.z * (1 << kMortonBits)));
   }
-  std::ranges::sort(mortonPrimitives.begin(), mortonPrimitives.end(),
-                    [](const MortonPrimitive& lhs, const MortonPrimitive& rhs) {
-                      return lhs.mortonCode < rhs.mortonCode;
-                    });
+  std::ranges::sort(mortonPrimitives, [](const auto& lhs, const auto& rhs) {
+    return lhs.mortonCode < rhs.mortonCode;
+  });
+  // reorder primitives and mortonPrimitives
+  primitives.get().resize(mortonPrimitives.size());
+  for (int i = 0; i < mortonPrimitives.size(); i++) {
+    primitives.get()[i] = std::move(
+        unsortedPrimitives.get()[mortonPrimitives[i].primitiveIndex]);
+  }
   std::unique_ptr<LbvhRawNode> rt{};
-  lbvhRecursiveBuild(rt, mortonPrimitives, primitives, 0, primitives.size(), 31);
+  lbvhRecursiveBuild(rt, mortonPrimitives, primitives, 0, primitives.size(),
+                     31);
   lbvhFlatten(rt, nodes);
 }
 
@@ -228,13 +233,10 @@ void LBVH::intersect(const Ray& ray,
   int top{};
   int nodeIdx = 0;
   si = std::nullopt;
+  if (!intersectBBox(nodes[0].bbox, ray))
+    return;
   while (true) {
     const LBVHNode& node = nodes[nodeIdx];
-    if (!intersectBBox(node.bbox, ray)) {
-      if (!top) return;
-      nodeIdx = nodesToVisit[--top];
-      continue;
-    }
     // it is a leaf node
     if (node.nPrimitives) {
       intersectLeaf(ray, nodeIdx, si);
@@ -273,13 +275,10 @@ bool LBVH::intersect(const Ray& ray) const {
   std::array<int, 64> nodesToVisit{};
   int top{};
   int nodeIdx = 0;
+  if (!intersectBBox(nodes[0].bbox, ray))
+    return false;
   while (true) {
     const LBVHNode& node = nodes[nodeIdx];
-    if (!intersectBBox(node.bbox, ray)) {
-      if (!top) return false;
-      nodeIdx = nodesToVisit[--top];
-      continue;
-    }
     // it is a leaf node
     if (node.nPrimitives) {
       if (intersectLeaf(ray, nodeIdx))

@@ -2,7 +2,6 @@
 #define RENDERCRAFT_CORE_SAMPLER_H
 
 #include <Core/core.h>
-#include <Core/rand-gen.h>
 #include <random>
 
 namespace rdcraft {
@@ -27,6 +26,17 @@ class Sampler {
     std::mt19937 gen;
     std::uniform_real_distribution<> dis;
 };
+
+// [l, r)
+inline int randomInt(Sampler& sampler, int l, int r) {
+  Real u = sampler.sample();
+  return static_cast<int>(std::floor(u * (r - l))) + l;
+}
+
+inline Real randomReal(Sampler& sampler, Real l, Real r) {
+  Real u = sampler.sample();
+  return u * (r - l) + l;
+}
 
 struct DiscreteDistribution {
   DiscreteDistribution() = default;
@@ -84,10 +94,10 @@ struct DiscreteDistribution {
     int idx;
     Real pdf;
   };
-  SampleRecord sample() const {
-    int idx = randomInt(0, probabilities.size() - 1);
+  SampleRecord sample(Sampler& sampler) const {
+    int idx = randomInt(sampler, 0, probabilities.size());
     Real pdf = probabilities[idx] * probabilities.size();
-    if (randomReal() < pdf)
+    if (sampler.sample() < pdf)
       return {idx, pdf};
     return {alias[idx], pdf};
   }
@@ -106,8 +116,7 @@ inline Vec3 uniformSampleSphere(Sampler& sampler) {
 }
 
 //uniformly sample a point on a disk x^2+y^2=1
-inline Vec2 uniformSampleDisk(Sampler& sampler)
-{
+inline Vec2 uniformSampleDisk(Sampler& sampler) {
   const Real phi = sampler.sample() * PI2;
   const Real R = std::sqrt(sampler.sample());
   return Vec2(R * std::cos(phi), R * std::sin(phi));
@@ -117,6 +126,7 @@ inline Vec3 cosWeightedSampleHemisphere(Sampler& sampler) {
   const Vec2 p = uniformSampleDisk(sampler);
   return Vec3(p.x, p.y, std::sqrt(1 - p.x * p.x - p.y * p.y));
 }
+
 }
 
 #endif

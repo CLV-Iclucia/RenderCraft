@@ -28,7 +28,7 @@ nextEventEst(const SurfaceInteraction& bRec, const ShadingInfo& si,
   Vec3 lightPos = pn.p;
   if (!testVisibility(pos, lightPos, scene)) return {};
   pdfLightPoint *= pLight;
-  Real pdfBxdf = bRec.pr->getMaterial()->pdfSample(si, si.wi);
+  Real pdfBxdf = bRec.pr->getMaterial()->pdfSample(si, si.local_wi);
   Real G = computeGeometry({pos, normal}, pn);
   if (G == 0.0) return {};
   pdfBxdf *= G;
@@ -98,7 +98,7 @@ Spectrum PathTracer::L(const Ray& ray, const Scene* scene) const {
     L += throughput * nextEventEst(interaction.value(), si, scene);
     auto optRec{mat->sample(si, *scene->sampler)};
     if (!optRec) break;
-    const auto& wi = optRec->wi;
+    const auto& wi = optRec->local_wi;
     Real pdfBxdf = optRec->pdf;
     pdfBxdfCache = pdfBxdf;
     normalCache = interaction->normal;
@@ -118,7 +118,7 @@ void PathTracer::render(const Scene* scene) const {
       Vec3 radiance{};
       // we use non-splatting style since it is easier to code
       for (int k = 0; k < scene->camera->spp; k++) {
-        Ray ray{scene->camera->generateRaySample(i, j)};
+        Ray ray{scene->camera->sampleRay(*scene->sampler, i, j)};
         radiance += L(ray, scene);
       }
       radiance /= static_cast<Real>(scene->camera->spp);

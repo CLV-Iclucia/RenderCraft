@@ -68,19 +68,25 @@ class GeometryPrimitive final : public Primitive {
       return surface.index() == 0;
     }
     int externalMediumId() const override {
-      if (surface.index() != 2)
+      if (surface.index() != 0)
         ERROR("cannot be called on non-medium primitive.");
       return std::get<MediumInterface>(surface).external_id;
     }
     int internalMediumId() const override {
-      if (surface.index() != 2)
+      if (surface.index() != 0)
         ERROR("cannot be called on non-medium primitive.");
       return std::get<MediumInterface>(surface).internal_id;
     }
     Material* getMaterial() const override {
+      if (surface.index() != 1)
+        ERROR("cannot be called on non-material primitive.");
       return std::get<Material*>(surface);
     }
-    Light* getLight() const override { return std::get<Light*>(surface); }
+    Light* getLight() const override {
+      if (surface.index() != 2)
+        ERROR("cannot be called on non-light primitive.");
+      return std::get<Light*>(surface);
+    }
     AABB getAABB() const override {
       if (shape->needsTransform())
         return shape->transformToWorld()->transform(shape->getAABB());

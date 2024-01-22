@@ -44,8 +44,14 @@ T infinity() {
 }
 
 inline Mat3 constructFrame(const Vec3& N) {
-  Vec3 T = normalize(cross(N, Vec3(0, 1, 0)));
+  Vec3 T(1.0, 0.0, 0.0);
+  if (N.x >= 0.999 || N.x <= -0.999)
+  {
+    T.x = 0.0;
+    T.y = 1.0;
+  }
   Vec3 B = normalize(cross(N, T));
+  T = normalize(cross(N, B));
   return Mat3(T, B, N);
 }
 
@@ -73,6 +79,24 @@ T Max(const Vector<T, Dim>& vec) {
   T ret = vec[0];
   for (int i = 1; i < Dim; i++)
     ret = std::max(ret, vec[i]);
+  return ret;
+}
+
+template <typename T, int Dim>
+Vector<T, Dim> max(const Vector<T, Dim>& lhs, const Vector<T, Dim>& rhs) {
+  static_assert(Dim > 0);
+  Vector<T, Dim> ret;
+  for (int i = 0; i < Dim; i++)
+    ret[i] = std::max(lhs[i], rhs[i]);
+  return ret;
+}
+
+template <typename T, int Dim>
+Vector<T, Dim> min(const Vector<T, Dim>& lhs, const Vector<T, Dim>& rhs) {
+  static_assert(Dim > 0);
+  Vector<T, Dim> ret;
+  for (int i = 0; i < Dim; i++)
+    ret[i] = std::min(lhs[i], rhs[i]);
   return ret;
 }
 

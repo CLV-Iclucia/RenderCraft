@@ -42,20 +42,18 @@ struct LBVHNode {
   }
 };
 
-void lbvhBuild(const PolymorphicVector<Primitive>& primitives,
-                      std::vector<LBVHNode>& nodes);
 class LBVH : NonCopyable {
   public:
-    explicit LBVH(PolymorphicVector<Primitive>&& _primitives)
-      : primitives(std::move(_primitives)) {
-      ASSERT(!primitives.empty(), "primitives is empty");
-      lbvhBuild(primitives, nodes);
+    explicit LBVH(PolymorphicVector<Primitive>&& _primitives) {
+      ASSERT(!_primitives.empty(), "primitives is empty");
+      lbvhBuild(std::move(_primitives), nodes);
     }
     void intersect(const Ray&, std::optional<SurfaceInteraction>& si) const;
     bool intersect(const Ray&) const;
     AABB getAABB() const { return nodes[0].bbox; }
 
   private:
+    void lbvhBuild(PolymorphicVector<Primitive>&& primitives, std::vector<LBVHNode>& nodes);
     void intersectLeaf(const Ray&, int leaf,
                        std::optional<SurfaceInteraction>& si) const;
     bool intersectLeaf(const Ray& ray, int leaf) const;

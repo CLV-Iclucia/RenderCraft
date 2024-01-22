@@ -30,9 +30,17 @@ class AreaLight final : public Light {
       return dot(wo, pn.n) > 0.0 ? radiance : Spectrum();
     }
     ShapeSampleRecord sample(Sampler& sampler) const override {
+      if (shape->needsTransform()) {
+        auto [local_patch, pdf] = shape->sample(sampler);
+        return { shape->transformToWorld()->transform(local_patch), pdf};
+      }
       return shape->sample(sampler);
     }
     Real pdfSample(const SurfacePatch& pn) const override {
+      if (shape->needsTransform()) {
+        auto [p, n] = shape->transformToObj()->transform(pn);
+        return shape->pdfSample(p);
+      }
       return shape->pdfSample(pn.p);
     }
     Real power() const override {

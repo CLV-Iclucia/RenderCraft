@@ -417,35 +417,36 @@ loadScene(const char* file_path) {
 }
 #else
 
-const Vec3 kCameraPos = Vec3(-5, 100, 0);
-const Vec3 kCameraTarget = Vec3(0, 100, 0);
+const Vec3 kCameraPos = Vec3(0, 0.5, -1.8);
+const Vec3 kCameraTarget = Vec3(0, 0.5, 0);
 const Vec3 kCameraUp = Vec3(0, 1, 0);
-const Vec3 kLightPos = Vec3(500, 500, 0);
-const Real kLightRadius = 40;
-const Real kLightRadiance = 10.0;
-const Real kCboxAlbedo = 0.7;
-const std::string kCboxPath = std::format("{}/cbox/meshes/cbox_smallbox.obj",
-                                          RDCRAFT_SCENE_DIR);
+const Vec3 kLightPos = Vec3(3, 2.5, 0);
+const Real kLightRadius = 1.0;
+const Real kLightRadiance = 16.0;
+const Spectrum kPlaneAlbedo = Spectrum(0.1, 0.1, 0.4);
+const std::string kPlanePath = std::format("{}/assets/plane.obj",
+                                           RDCRAFT_SCENE_DIR);
 const Real kHGg = 0.8;
 const std::string kDensityVolTexPath = std::format("{}/media/density.vol",
                                                    RDCRAFT_SCENE_DIR);
 const std::string kAlbedoVolTexPath = std::format("{}/media/albedo.vol",
                                                   RDCRAFT_SCENE_DIR);
-const Vec3 kVolSize = Vec3(50, 50, 50);
+const Vec3 kVolSize = Vec3(1, 1, 1);
+const Vec3 kVolCenter = Vec3(0, 0.5, -1);
 static std::unique_ptr<Camera> hardCodedCamera() {
   auto camera = std::make_unique<Camera>();
-  camera->cameraToWorld = transforms.construct(
+  camera->worldToCamera = transforms.construct(
       glm::lookAt(kCameraPos, kCameraTarget, kCameraUp));
-  camera->worldToCamera = transforms.
-      construct(camera->cameraToWorld->inverse());
-  camera->scrWidth = 100;
-  camera->scrHeight = 100;
+  camera->cameraToWorld = transforms.
+      construct(camera->worldToCamera->inverse());
+  camera->scrWidth = 0.5;
+  camera->scrHeight = 0.5;
   camera->nx = 512;
   camera->ny = 512;
-  camera->nearPlane = 1.0;
+  camera->nearPlane = 0.2;
   camera->farPlane = 1000.0;
   camera->focalDistance = 1.0;
-  camera->spp = 256;
+  camera->spp = 2048;
   camera->filter = std::make_unique<BoxFilter>(0.5);
   return camera;
 }
@@ -458,38 +459,45 @@ hardCodedScene() {
   Transform* lightTranslate = transforms.construct(translate(kLightPos));
   Transform* lightInvTranslate = transforms.
       construct(lightTranslate->inverse());
-  auto lightSphere = std::make_unique<Sphere>(kLightRadius, lightTranslate,
-                                              lightInvTranslate);
+  auto lightSphere = std::make_unique<Sphere>(kLightRadius, lightInvTranslate,
+                                              lightTranslate);
   auto light = lights.construct<AreaLight>(lightSphere.get(),
                                            Spectrum(kLightRadiance));
   auto lightPrimitive = primitives.construct<GeometryPrimitive>(
-      lightSphere, light);
-  scene->lights = std::move(lights);
-  auto cboxMaterial = materials.construct<Lambertian>(Spectrum(kCboxAlbedo));
-  auto cboxMesh = meshes.construct();
-  if (!loadObj(kCboxPath, cboxMesh))
+      std::move(lightSphere), light);
+  auto planeMaterial = materials.construct<Lambertian>(kPlaneAlbedo);
+  auto planeMesh = meshes.construct();
+  if (!loadObj(kPlanePath, identity(), planeMesh))
     ERROR("loading obj file error.");
-  for (int i = 0; i < cboxMesh->triangleCount; i++) {
+  for (int i = 0; i < planeMesh->triangleCount; i++) {
     primitives.construct<GeometryPrimitive>(
-        std::make_unique<Triangle>(cboxMesh->indices.data() + 3 * i, cboxMesh),
-        cboxMaterial);
+        std::make_unique<
+          Triangle>(planeMesh->indices.data() + 3 * i, planeMesh),
+        planeMaterial);
   }
-  auto interface = MediumInterface(-1, 0);
+  auto interface = MediumInterface(0, -1);
   auto HG = std::make_unique<HenyeyGreenstein>(kHGg);
   auto densityTexture = std::make_unique<GridVolumeTexture<Spectrum>>(
       kDensityVolTexPath.c_str());
   auto albedoTexture = std::make_unique<GridVolumeTexture<Spectrum>>(
       kAlbedoVolTexPath.c_str());
   Medium* medium = scene->media.construct<HeterogeneousMedium>(
-      HG, densityTexture, albedoTexture, -kVolSize * 0.5, kVolSize);
+      std::make_unique<IsotropicPhaseFunction>(), std::move(densityTexture),
+      std::move(albedoTexture),
+      kVolCenter - kVolSize * 0.5, kVolSize);
+  auto smokeTranslate = transforms.construct(translate(kVolCenter));
+  auto smokeInvTranslate = transforms.construct(smokeTranslate->inverse());
   auto smokeSphere =
-      std::make_unique<Sphere>(kVolSize.x * 0.5, nullptr, nullptr);
+      std::make_unique<Sphere>(kVolSize.x * 0.5, smokeInvTranslate,
+                               smokeTranslate);
   auto smokePrimitive = primitives.construct<GeometryPrimitive>(
-      smokeSphere, interface);
+      std::move(smokeSphere), interface);
   scene->lights = std::move(lights);
+  scene->meshes = std::move(meshes);
   scene->materials = std::move(materials);
   scene->pr = std::make_unique<Aggregate>(std::move(primitives));
   scene->transforms = std::move(transforms);
+  scene->sampler = std::make_unique<Sampler>();
   scene->buildLightDistribution();
   return std::make_tuple(std::move(scene), std::move(integrator));
 }

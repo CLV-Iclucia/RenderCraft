@@ -11,13 +11,14 @@ using rdcraft::loadScene;
 using rdcraft::Integrator;
 using rdcraft::Scene;
 int main(int argc, char** argv) {
+  std::printf("RenderCraft version 1.0.0\n");
+#ifndef USE_HARD_CODED_SCENE
   if (argc < 2) {
-    std::printf("RenderCraft version 1.0.0\n");
+    std::printf("Usage: rdcraft <path_to_scene_description_file>\n");
     return 0;
   }
   const char* scene_path = argv[1];
   printf("Parsing scene desciption file: %s\n", scene_path);
-#ifndef USE_HARD_CODED_SCENE
   auto [scene, integrator] = loadScene(scene_path);
   printf("Parsing done.\n");
 #else
@@ -25,4 +26,5 @@ int main(int argc, char** argv) {
   printf("Scene constructed.\n");
 #endif
   integrator->render(scene.get());
+  printf("Bye-bye!\n");
 }

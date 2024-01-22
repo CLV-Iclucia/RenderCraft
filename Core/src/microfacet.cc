@@ -26,7 +26,7 @@ Real TrowbridgeModel::ShadowMasking(Real cosThetaI, Real cosThetaO,
   return SmithMonoShadow(cosThetaSqrI, uv) * SmithMonoShadow(cosThetaSqrO, uv);
 }
 
-std::optional<BxdfSampleRecord> TrowbridgeModel::sample(
+std::optional<BxdfSampleRecord> TrowbridgeModel::sampleNormal(
     const Vec2& uv, Sampler& sampler) const {
   Vec2 rnd_uv = sampler.sample<2>();
   Real Phi = rnd_uv.x * PI2, tmp = rnd_uv.y;
@@ -41,5 +41,15 @@ std::optional<BxdfSampleRecord> TrowbridgeModel::sample(
   Real pdf = cosTheta / tmp * alphaSqr / PI;
   Vec3 H(sinTheta * std::cos(Phi), sinTheta * std::sin(Phi), cosTheta);
   return std::make_optional<BxdfSampleRecord>(H, pdf);
+}
+
+Real TrowbridgeModel::pdfSample(const Vec3& H, const Vec2& uv) const {
+  Real cosTheta = H.z;
+  Real cosThetaSqr = cosTheta * cosTheta;
+  Real Alpha = alpha->eval(uv);
+  Real alphaSqr = Alpha * Alpha;
+  Real tmp = ((alphaSqr - 1.0) * cosThetaSqr + 1.0);
+  tmp *= tmp;
+  return cosTheta / tmp * alphaSqr / PI;
 }
 }

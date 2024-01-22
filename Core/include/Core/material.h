@@ -20,7 +20,7 @@ struct Material {
   virtual std::optional<BxdfSampleRecord> sample(
       const ShadingInfo& si, Sampler& sampler) const = 0;
   virtual Real pdfSample(const ShadingInfo& si, const Vec3& wi) const = 0;
-  virtual ~Material();
+  virtual ~Material() = default;
 };
 
 class Lambertian final : public Material {
