@@ -22,7 +22,12 @@ int main(int argc, char** argv) {
   auto [scene, integrator] = loadScene(scene_path);
   printf("Parsing done.\n");
 #else
-  auto [scene, integrator] = rdcraft::hardCodedScene();
+  if (argc != 2) {
+    std::printf("Usage: rdcraft <path_to_save_image>\n");
+    return 0;
+  }
+  auto save_path = std::string(argv[1]);
+  auto [scene, integrator] = rdcraft::hardCodedScene(save_path);
   printf("Scene constructed.\n");
 #endif
   integrator->render(scene.get());

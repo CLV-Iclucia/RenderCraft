@@ -452,8 +452,8 @@ static std::unique_ptr<Camera> hardCodedCamera() {
 }
 
 std::tuple<std::unique_ptr<Scene>, std::unique_ptr<Integrator>>
-hardCodedScene() {
-  auto integrator = std::make_unique<VolumetricPathTracer>();
+hardCodedScene(const std::string& output_path = std::string("./output.exr")) {
+  auto integrator = std::make_unique<VolumetricPathTracer>(output_path);
   auto scene = std::make_unique<Scene>();
   scene->camera = hardCodedCamera();
   Transform* lightTranslate = transforms.construct(translate(kLightPos));

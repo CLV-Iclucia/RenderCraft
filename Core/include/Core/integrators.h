@@ -38,18 +38,21 @@ class PathTracer final : public Integrator {
 };
 
 class VolumetricPathTracer final : public Integrator {
-  struct RenderOptions {
-    const int maxDepth = -1;
-    const int rrDepth = 5;
-    const uint maxNullCollisions = 1000; // simply to control the rendering time
-    std::string savingPath = "./output.exr";
-    bool enableDisplayProcess = true;
-    ///< whether to display the rendering process
-    bool enableLogOutputs = false; ///< whether to output the rendering log
-    // many more to be added
-  } opt;
-
   public:
+    explicit VolumetricPathTracer(const std::string& savingPath) {
+      opt.savingPath = savingPath;
+    }
+    struct RenderOptions {
+      const int maxDepth = -1;
+      const int rrDepth = 5;
+      const uint maxNullCollisions = 1000;
+      // simply to control the rendering time
+      std::string savingPath = "./output.exr";
+      bool enableDisplayProcess = true;
+      ///< whether to display the rendering process
+      bool enableLogOutputs = false; ///< whether to output the rendering log
+      // many more to be added
+    } opt;
     void render(const Scene* scene) const override;
     Spectrum L(Ray&, const Scene* scene) const;
 

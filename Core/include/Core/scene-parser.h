@@ -15,7 +15,8 @@ void parsePrimitive(pugi::xml_node primitive);
 std::tuple<std::unique_ptr<Scene>, std::unique_ptr<Integrator>> loadScene(
     const char* file_path);
 #else
-std::tuple<std::unique_ptr<Scene>, std::unique_ptr<Integrator>> hardCodedScene();
+std::tuple<std::unique_ptr<Scene>, std::unique_ptr<Integrator>> hardCodedScene(
+    const std::string& output_path);
 #endif
 }
 #endif
